@@ -1,0 +1,44 @@
+{
+ "sql": "select top 5 [PR].[Company] as [C] from Erp.PREmpMas as [PR]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "97eec4b8-a48a-517f-a1f0-d3d78e2969b5",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "97eec4b8-a48a-517f-a1f0-d3d78e2969b5",
+    "TableID": "PR",
+    "DBSchemaName": "Erp",
+    "DBTableName": "PREmpMas",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "97eec4b8-a48a-517f-a1f0-d3d78e2969b5",
+    "TableID": "PR",
+    "DBSchemaName": "Erp",
+    "DBTableName": "PREmpMas",
+    "DBFieldName": "Company",
+    "FieldName": "Company",
+    "Alias": "C",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

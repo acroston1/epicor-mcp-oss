@@ -1,0 +1,86 @@
+{
+ "sql": "with [c] as (select [LD].[JobNum] as [J], [LD].[LaborRate] as [R] from Erp.LaborDtl as [LD]) select top 5 [c].[J] as [J] from [c]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "Type": "CTE",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "a3314dc0-3bb2-52ea-8684-b6bfdaebc47b",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "a3314dc0-3bb2-52ea-8684-b6bfdaebc47b",
+    "TableID": "c",
+    "DBSchemaName": "",
+    "DBTableName": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "TableType": "SQ"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "LaborRate",
+    "FieldName": "LaborRate",
+    "Alias": "R",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "a3314dc0-3bb2-52ea-8684-b6bfdaebc47b",
+    "TableID": "c",
+    "DBSchemaName": "",
+    "DBTableName": "4e8291f4-334f-5f2f-bf3a-2545770cdaf3",
+    "DBFieldName": "J",
+    "FieldName": "J",
+    "Alias": "J",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

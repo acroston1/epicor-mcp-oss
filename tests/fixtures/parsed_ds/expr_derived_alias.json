@@ -1,0 +1,106 @@
+{
+ "sql": "select top 5 [t].[PN] as [PN] from (select [OD].[PartNum] as [PN], sum([OD].[OrderQty]) as [Q] from Erp.OrderDtl as [OD] group by [OD].[PartNum]) as [t] where [t].[Q] * 2 > 100",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "8849b50b-d3b8-57ce-a3e2-1b7a76ebe350",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   },
+   {
+    "SubQueryID": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "Type": "InnerSubQuery",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   },
+   {
+    "SubQueryID": "8849b50b-d3b8-57ce-a3e2-1b7a76ebe350",
+    "TableID": "t",
+    "DBSchemaName": "",
+    "DBTableName": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "TableType": "SQ"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Q",
+    "Alias": "Q",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(OD.OrderQty)",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "8849b50b-d3b8-57ce-a3e2-1b7a76ebe350",
+    "TableID": "t",
+    "DBSchemaName": "",
+    "DBTableName": "dca6f694-3657-5d75-aa96-ede3a17e480b",
+    "DBFieldName": "PN",
+    "FieldName": "PN",
+    "Alias": "PN",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "8849b50b-d3b8-57ce-a3e2-1b7a76ebe350",
+    "TableID": "",
+    "FieldName": "(t.Q * 2)",
+    "CompOp": ">",
+    "RValue": "100",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

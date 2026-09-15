@@ -1,0 +1,88 @@
+{
+ "sql": "select top 100 [A].[JobNum] as [J], count(*) as [N] from Erp.JobHead as [A] inner join Erp.LaborDtl as [B] on [A].[Company] = [B].[Company] group by [A].[JobNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 100.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "N",
+    "Alias": "N",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "count(*)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "RelationID": "ddcb7d1a-1139-5cc0-bb57-88ed332e6c35",
+    "ParentTableID": "A",
+    "ChildTableID": "B",
+    "JoinType": "Inner",
+    "OuterJoin": false
+   }
+  ],
+  "QueryRelationField": [
+   {
+    "SubQueryID": "10f2d5df-be93-536f-9df2-7934bf997cea",
+    "RelationID": "ddcb7d1a-1139-5cc0-bb57-88ed332e6c35",
+    "ParentFieldName": "Company",
+    "ChildFieldName": "Company"
+   }
+  ],
+  "QueryGroupBy": []
+ }
+}

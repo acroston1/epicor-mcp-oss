@@ -1,0 +1,72 @@
+{
+ "sql": "select top 200 [P].* from Erp.Part as [P]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "53897246-8ae0-5d00-bfef-c9518ce8caf2",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 200.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "53897246-8ae0-5d00-bfef-c9518ce8caf2",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "53897246-8ae0-5d00-bfef-c9518ce8caf2",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "Company",
+    "FieldName": "Company",
+    "Alias": "Part_Company",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "53897246-8ae0-5d00-bfef-c9518ce8caf2",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "Part_PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "53897246-8ae0-5d00-bfef-c9518ce8caf2",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartDescription",
+    "FieldName": "PartDescription",
+    "Alias": "Part_PartDescription",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 4
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

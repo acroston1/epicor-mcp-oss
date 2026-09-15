@@ -1,0 +1,78 @@
+{
+ "sql": "select [OD].[PartNum] as [PN], sum([OD].[ExtPriceDtl]) as [Rev] from Erp.OrderDtl as [OD] where [OD].[OrderNum] > 900000 group by [OD].[PartNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Rev",
+    "Alias": "Rev",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(OD.ExtPriceDtl)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "a3d30de8-00a5-59f5-9ecf-029020d11d56",
+    "TableID": "OD",
+    "FieldName": "OrderNum",
+    "CompOp": ">",
+    "RValue": "900000",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

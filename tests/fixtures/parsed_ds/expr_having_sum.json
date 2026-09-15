@@ -1,0 +1,78 @@
+{
+ "sql": "select top 5 [OD].[PartNum] as [PN], sum([OD].[OrderQty]) as [Q] from Erp.OrderDtl as [OD] group by [OD].[PartNum] having sum([OD].[OrderQty]) > 100",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Q",
+    "Alias": "Q",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(OD.OrderQty)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "9c6381cf-7555-5a1a-a86b-110ebb9a90a1",
+    "TableID": "",
+    "FieldName": "sum(OD.OrderQty)",
+    "CompOp": ">",
+    "RValue": "100",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

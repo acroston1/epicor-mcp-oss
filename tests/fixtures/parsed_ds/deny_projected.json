@@ -1,0 +1,44 @@
+{
+ "sql": "select top 5 [LD].[LaborRate] as [R] from Erp.LaborDtl as [LD]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "626c5146-8dcd-5dd8-abcd-fd12e0475412",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "626c5146-8dcd-5dd8-abcd-fd12e0475412",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "626c5146-8dcd-5dd8-abcd-fd12e0475412",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "LaborRate",
+    "FieldName": "LaborRate",
+    "Alias": "R",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

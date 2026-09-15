@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [P].[PartNum] as [PN] from Erp.Part as [P] where isnull([P].[PartDescription], '') = ''",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "21b64651-1ab8-540c-a164-f932be1d493e",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "21b64651-1ab8-540c-a164-f932be1d493e",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "21b64651-1ab8-540c-a164-f932be1d493e",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "21b64651-1ab8-540c-a164-f932be1d493e",
+    "TableID": "",
+    "FieldName": "isnull(P.PartDescription, '')",
+    "CompOp": "=",
+    "RValue": "''",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

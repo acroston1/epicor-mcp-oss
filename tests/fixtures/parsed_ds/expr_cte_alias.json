@@ -1,0 +1,106 @@
+{
+ "sql": "with [c] as (select [OD].[PartNum] as [PartNum], sum([OD].[OrderQty]) as [Q] from Erp.OrderDtl as [OD] group by [OD].[PartNum]) select top 5 [c].[PartNum] as [PN] from [c] where isnull([c].[Q], 0) > 100",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "Type": "CTE",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "36a1a0ee-55b9-537b-b7e5-8cb805178e22",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   },
+   {
+    "SubQueryID": "36a1a0ee-55b9-537b-b7e5-8cb805178e22",
+    "TableID": "c",
+    "DBSchemaName": "",
+    "DBTableName": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "TableType": "SQ"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Q",
+    "Alias": "Q",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(OD.OrderQty)",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "36a1a0ee-55b9-537b-b7e5-8cb805178e22",
+    "TableID": "c",
+    "DBSchemaName": "",
+    "DBTableName": "1f7c15bc-33e7-5bb5-a716-c5f48918e5ad",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "36a1a0ee-55b9-537b-b7e5-8cb805178e22",
+    "TableID": "",
+    "FieldName": "isnull(c.Q, 0)",
+    "CompOp": ">",
+    "RValue": "100",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

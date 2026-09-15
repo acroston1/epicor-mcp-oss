@@ -1,0 +1,5 @@
+# Example: copy selected entries into table_whitelist.txt.
+Erp.Part
+Erp.JobHead
+# This is a separate grant; Part never implicitly grants Part_UD:
+# Erp.Part_UD

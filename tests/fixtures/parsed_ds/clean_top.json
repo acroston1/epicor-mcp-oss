@@ -1,0 +1,44 @@
+{
+ "sql": "select top 5 [P].[PartNum] as [PN] from Erp.Part as [P]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "095ea7d7-3ade-5501-bc4e-1f550b3da9d4",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "095ea7d7-3ade-5501-bc4e-1f550b3da9d4",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "095ea7d7-3ade-5501-bc4e-1f550b3da9d4",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

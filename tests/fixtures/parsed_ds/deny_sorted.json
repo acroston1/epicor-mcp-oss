@@ -1,0 +1,52 @@
+{
+ "sql": "select top 5 [EB].[EmpID] as [E] from Erp.EmpBasic as [EB] order by [EB].[LaborRate] desc",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "3634104d-3b24-58e2-acba-50198a1da87b",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "3634104d-3b24-58e2-acba-50198a1da87b",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "3634104d-3b24-58e2-acba-50198a1da87b",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "E",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [
+   {
+    "SubQueryID": "3634104d-3b24-58e2-acba-50198a1da87b",
+    "TableID": "EB",
+    "FieldName": "LaborRate",
+    "Seq": 1,
+    "IsAsc": false
+   }
+  ],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

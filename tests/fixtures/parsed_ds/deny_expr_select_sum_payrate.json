@@ -1,0 +1,51 @@
+{
+ "sql": "select sum([E].[PayRate]) as [x] from Erp.EmpBasic as [E]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "b7375e37-46a7-58d2-85ad-ee14fc54e995",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "b7375e37-46a7-58d2-85ad-ee14fc54e995",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "b7375e37-46a7-58d2-85ad-ee14fc54e995",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "b7375e37-46a7-58d2-85ad-ee14fc54e995",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "x",
+    "Alias": "x",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(E.PayRate)",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

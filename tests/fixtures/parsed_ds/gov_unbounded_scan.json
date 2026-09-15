@@ -1,0 +1,92 @@
+{
+ "sql": "select top 100 [A].[JobNum] as [J], sum([B].[ScrapQty]) as [S] from Erp.JobHead as [A], Erp.LaborDtl as [B], Erp.JobOper as [C] where [A].[Company] = [B].[Company] group by [A].[JobNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 100.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "C",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobOper",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "S",
+    "Alias": "S",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(B.ScrapQty)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "6361ab6f-2d36-571b-9458-2849d54452c7",
+    "TableID": "A",
+    "FieldName": "Company",
+    "CompOp": "=",
+    "RValue": "",
+    "IsConst": false,
+    "ToTableID": "B",
+    "ToFieldName": "Company",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

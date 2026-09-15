@@ -1,0 +1,107 @@
+{
+ "sql": "select top 100 [A].[JobNum] as [J], sum([B].[ScrapQty]) as [S] from Erp.JobHead as [A] inner join Erp.LaborDtl as [B] on [A].[Company] = [B].[Company] and [A].[JobNum] = [B].[JobNum] where [A].[JobNum] = '100001' group by [A].[JobNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 100.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "S",
+    "Alias": "S",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(B.ScrapQty)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "TableID": "A",
+    "FieldName": "JobNum",
+    "CompOp": "=",
+    "RValue": "'100001'",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "RelationID": "5ec5acd0-6d72-59c2-afec-e2cce56362cb",
+    "ParentTableID": "A",
+    "ChildTableID": "B",
+    "JoinType": "Inner",
+    "OuterJoin": false
+   }
+  ],
+  "QueryRelationField": [
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "RelationID": "5ec5acd0-6d72-59c2-afec-e2cce56362cb",
+    "ParentFieldName": "Company",
+    "ChildFieldName": "Company"
+   },
+   {
+    "SubQueryID": "e6507677-3fc3-51b8-8161-5a1703388f30",
+    "RelationID": "5ec5acd0-6d72-59c2-afec-e2cce56362cb",
+    "ParentFieldName": "JobNum",
+    "ChildFieldName": "JobNum"
+   }
+  ],
+  "QueryGroupBy": []
+ }
+}

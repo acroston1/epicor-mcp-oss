@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [E].[EmpID] as [ID] from Erp.EmpBasic as [E] where isnull([E].[PayRate], 0) > 0",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "84ef1d59-d163-52ed-a616-fc53f6438f74",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "84ef1d59-d163-52ed-a616-fc53f6438f74",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "84ef1d59-d163-52ed-a616-fc53f6438f74",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "ID",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "84ef1d59-d163-52ed-a616-fc53f6438f74",
+    "TableID": "",
+    "FieldName": "isnull(E.PayRate, 0)",
+    "CompOp": ">",
+    "RValue": "0",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

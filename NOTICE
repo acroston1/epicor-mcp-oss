@@ -1,0 +1,12 @@
+Epicor MCP OSS
+Copyright 2026 Chandler Industries
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+This is an independently developed, read-only MCP server for Epicor Kinetic.
+It is not an official Epicor product and is not endorsed by Epicor.
+Epicor and Epicor Kinetic are trademarks of their respective owners.
+
+Tenant configuration, credentials, business data, vendor documentation,
+schema corpora and generated indexes are not included in this repository.
+Third-party dependencies retain their own licenses.

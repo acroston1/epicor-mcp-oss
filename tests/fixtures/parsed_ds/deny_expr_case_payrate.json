@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [E].[EmpID] as [ID] from Erp.EmpBasic as [E] where (case when [E].[PayRate] > 20 then 1 else 0 end) = 1",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "69038935-3389-5cc3-833b-ee0e4b5ebaa5",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "69038935-3389-5cc3-833b-ee0e4b5ebaa5",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "69038935-3389-5cc3-833b-ee0e4b5ebaa5",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "ID",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "69038935-3389-5cc3-833b-ee0e4b5ebaa5",
+    "TableID": "",
+    "FieldName": "(CASE \r\n\t\tWHEN E.PayRate > 20 THEN 1 \r\n\tELSE \r\n\t\t0 \r\n\tEND)",
+    "CompOp": "=",
+    "RValue": "1",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

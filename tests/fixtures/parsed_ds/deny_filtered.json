@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [EB].[EmpID] as [E] from Erp.EmpBasic as [EB] where [EB].[LaborRate] > 50",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "c70ac47e-0ed8-5fd8-8bdb-6b5a0541785f",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "c70ac47e-0ed8-5fd8-8bdb-6b5a0541785f",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "c70ac47e-0ed8-5fd8-8bdb-6b5a0541785f",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "E",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "c70ac47e-0ed8-5fd8-8bdb-6b5a0541785f",
+    "TableID": "EB",
+    "FieldName": "LaborRate",
+    "CompOp": ">",
+    "RValue": "50",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

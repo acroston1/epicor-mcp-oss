@@ -1,0 +1,44 @@
+{
+ "sql": "select top 5 [U].[DcdUserID] as [U] from Ice.UserFile as [U]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "9289ae58-f80d-573b-b59b-f8cb2fbfdf64",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "9289ae58-f80d-573b-b59b-f8cb2fbfdf64",
+    "TableID": "U",
+    "DBSchemaName": "Ice",
+    "DBTableName": "UserFile",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "9289ae58-f80d-573b-b59b-f8cb2fbfdf64",
+    "TableID": "U",
+    "DBSchemaName": "Ice",
+    "DBTableName": "UserFile",
+    "DBFieldName": "DcdUserID",
+    "FieldName": "DcdUserID",
+    "Alias": "U",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

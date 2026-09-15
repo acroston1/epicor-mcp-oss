@@ -1,0 +1,97 @@
+{
+ "sql": "select top 5 [JH].[JobNum] as [J] from Erp.JobHead as [JH] where [JH].[JobNum] in (select [LD].[JobNum] from Erp.LaborDtl as [LD] where [LD].[ScrapQty] > 0)",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "87fea30f-7bd5-5fd9-af08-b9d37df7a196",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   },
+   {
+    "SubQueryID": "199413aa-27ed-526f-954f-1e8a6383c763",
+    "Type": "InnerSubQuery",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "87fea30f-7bd5-5fd9-af08-b9d37df7a196",
+    "TableID": "JH",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "199413aa-27ed-526f-954f-1e8a6383c763",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "87fea30f-7bd5-5fd9-af08-b9d37df7a196",
+    "TableID": "JH",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "199413aa-27ed-526f-954f-1e8a6383c763",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "LD_JobNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "199413aa-27ed-526f-954f-1e8a6383c763",
+    "TableID": "LD",
+    "FieldName": "ScrapQty",
+    "CompOp": ">",
+    "RValue": "0",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "87fea30f-7bd5-5fd9-af08-b9d37df7a196",
+    "TableID": "JH",
+    "FieldName": "JobNum",
+    "CompOp": "IN",
+    "RValue": "199413aa-27ed-526f-954f-1e8a6383c763",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "JobNum",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

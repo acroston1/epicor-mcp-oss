@@ -1,0 +1,114 @@
+{
+ "sql": "select top 5 [LD].[JobNum] as [J], [EB].[EmpID] as [E], [EB].[Name] as [N] from Erp.LaborDtl as [LD] inner join Erp.EmpBasic as [EB] on [LD].[Company] = [EB].[Company] and [LD].[EmployeeNum] = [EB].[EmpID] where [LD].[JobNum] = '100001'",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "E",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "Name",
+    "FieldName": "Name",
+    "Alias": "N",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 3
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "TableID": "LD",
+    "FieldName": "JobNum",
+    "CompOp": "=",
+    "RValue": "'100001'",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "RelationID": "66a0f40a-39eb-53c7-b206-2ab5b4f35c00",
+    "ParentTableID": "LD",
+    "ChildTableID": "EB",
+    "JoinType": "Inner",
+    "OuterJoin": false
+   }
+  ],
+  "QueryRelationField": [
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "RelationID": "66a0f40a-39eb-53c7-b206-2ab5b4f35c00",
+    "ParentFieldName": "Company",
+    "ChildFieldName": "Company"
+   },
+   {
+    "SubQueryID": "d2a9d618-b4be-50b7-b6a0-c1d755eae77b",
+    "RelationID": "66a0f40a-39eb-53c7-b206-2ab5b4f35c00",
+    "ParentFieldName": "EmployeeNum",
+    "ChildFieldName": "EmpID"
+   }
+  ],
+  "QueryGroupBy": []
+ }
+}

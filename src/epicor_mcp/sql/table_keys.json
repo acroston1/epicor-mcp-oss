@@ -1,0 +1,186 @@
+{
+  "_source": "Small authored examples for core engine relationships; not a harvested schema catalogue. Override with your own verified key metadata.",
+  "tables": {
+    "Part": [
+      [
+        "Company",
+        "PartNum"
+      ]
+    ],
+    "PartWhse": [
+      [
+        "Company",
+        "PartNum",
+        "WarehouseCode"
+      ]
+    ],
+    "Customer": [
+      [
+        "Company",
+        "CustNum"
+      ]
+    ],
+    "Vendor": [
+      [
+        "Company",
+        "VendorNum"
+      ]
+    ],
+    "JobHead": [
+      [
+        "Company",
+        "JobNum"
+      ]
+    ],
+    "JobAsmbl": [
+      [
+        "Company",
+        "JobNum",
+        "AssemblySeq"
+      ]
+    ],
+    "JobMtl": [
+      [
+        "Company",
+        "JobNum",
+        "AssemblySeq",
+        "MtlSeq"
+      ]
+    ],
+    "JobOper": [
+      [
+        "Company",
+        "JobNum",
+        "AssemblySeq",
+        "OprSeq"
+      ]
+    ],
+    "OrderHed": [
+      [
+        "Company",
+        "OrderNum"
+      ]
+    ],
+    "OrderDtl": [
+      [
+        "Company",
+        "OrderNum",
+        "OrderLine"
+      ]
+    ],
+    "OrderRel": [
+      [
+        "Company",
+        "OrderNum",
+        "OrderLine",
+        "OrderRelNum"
+      ]
+    ],
+    "POHeader": [
+      [
+        "Company",
+        "PONum"
+      ]
+    ],
+    "PODetail": [
+      [
+        "Company",
+        "PONUM",
+        "POLine"
+      ]
+    ],
+    "PORel": [
+      [
+        "Company",
+        "PONum",
+        "POLine",
+        "PORelNum"
+      ]
+    ],
+    "InvcHead": [
+      [
+        "Company",
+        "InvoiceNum"
+      ]
+    ],
+    "InvcDtl": [
+      [
+        "Company",
+        "InvoiceNum",
+        "InvoiceLine"
+      ]
+    ],
+    "APInvHed": [
+      [
+        "Company",
+        "VendorNum",
+        "InvoiceNum"
+      ]
+    ],
+    "APInvDtl": [
+      [
+        "Company",
+        "VendorNum",
+        "InvoiceNum",
+        "InvoiceLine"
+      ]
+    ],
+    "LaborDtl": [
+      [
+        "Company",
+        "LaborHedSeq",
+        "LaborDtlSeq"
+      ]
+    ],
+    "DMRHead": [
+      [
+        "Company",
+        "DMRNum"
+      ]
+    ],
+    "DMRActn": [
+      [
+        "Company",
+        "DMRNum",
+        "ActionNum"
+      ]
+    ],
+    "PartRev": [
+      [
+        "Company",
+        "PartNum",
+        "RevisionNum",
+        "AltMethod"
+      ]
+    ],
+    "PartMtl": [
+      [
+        "Company",
+        "PartNum",
+        "RevisionNum",
+        "AltMethod",
+        "MtlSeq"
+      ]
+    ],
+    "PartTran": [
+      [
+        "Company",
+        "SysDate",
+        "SysTime",
+        "TranNum"
+      ]
+    ],
+    "Plant": [
+      [
+        "Company",
+        "Plant"
+      ]
+    ],
+    "Warehse": [
+      [
+        "Company",
+        "WarehouseCode"
+      ]
+    ]
+  }
+}

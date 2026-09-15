@@ -1,0 +1,72 @@
+{
+ "sql": "select top 5 [P].[PartNum] as [X] from Erp.Part as [P] union all select top 5 [EB].[LaborRate] as [X] from Erp.EmpBasic as [EB]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "90db01e9-c399-5373-b91f-5d16722e3a85",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   },
+   {
+    "SubQueryID": "cf48308a-9ba1-5b87-953f-5d4ded1b6efe",
+    "Type": "UnionAll",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "90db01e9-c399-5373-b91f-5d16722e3a85",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "cf48308a-9ba1-5b87-953f-5d4ded1b6efe",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "90db01e9-c399-5373-b91f-5d16722e3a85",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "X",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "cf48308a-9ba1-5b87-953f-5d4ded1b6efe",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "LaborRate",
+    "FieldName": "LaborRate",
+    "Alias": "X",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

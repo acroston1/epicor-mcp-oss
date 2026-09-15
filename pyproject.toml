@@ -1,0 +1,57 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "epicor-mcp-oss"
+version = "0.1.0"
+description = "Configurable Epicor Kinetic MCP framework with read-only table access and optional document retrieval."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.26.0,<2",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "httpx>=0.27.0",
+    "anyio>=4.0.0",
+    "python-jose[cryptography]>=3.3.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "openpyxl>=3.1.0",
+    # SQL parse/transform/generate for src/epicor_mcp/sql/transpile.py.
+    # Bounded to the major version exercised by the SQL transpiler tests.
+    "sqlglot>=30.14.0,<31",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx",
+    "numpy>=1.26",
+]
+semantic = [
+    "faiss-cpu>=1.7.0",
+    "sentence-transformers>=5.4.0,<6",
+]
+# Discovery vectors built through an OpenAI-compatible embeddings endpoint need
+# only numpy at runtime; the local-model path is covered by `semantic`.
+vectors = ["numpy>=1.26"]
+pdf = ["pymupdf>=1.24.0"]
+documents = ["pypdf>=5"]
+reports = ["weasyprint>=62.0"]
+
+[tool.pytest.ini_options]
+# asyncio_mode=auto lets async test functions run without a per-test decorator
+# (pytest-asyncio 1.x). The menu-authz suite is heavily async (client/authorizer).
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/epicor_mcp"]
+
+[project.scripts]
+epicor-mcp = "epicor_mcp.server:main"
+build-index = "epicor_mcp.index.builder:main"

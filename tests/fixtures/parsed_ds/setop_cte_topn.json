@@ -1,0 +1,181 @@
+{
+ "sql": "WITH [w] AS (SELECT [A].[PartNum] AS [PartNum], [A].[ExtPriceDtl] AS [Amt] FROM Erp.OrderDtl AS [A] WHERE [A].[OrderNum] < 100000 UNION ALL SELECT [B].[PartNum] AS [PartNum], [B].[ExtPriceDtl] AS [Amt] FROM Erp.OrderDtl AS [B] WHERE [B].[OrderNum] >= 100000) SELECT TOP 10 [w].[PartNum] AS [PartNum], SUM([w].[Amt]) AS [Revenue] FROM [w] GROUP BY [w].[PartNum] ORDER BY SUM([w].[Amt]) DESC",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "Type": "CTE",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "31c8f408-1e46-570d-b23a-8e4ff2b1c0c1",
+    "Type": "UnionAll",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 10.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "31c8f408-1e46-570d-b23a-8e4ff2b1c0c1",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "TableID": "w",
+    "DBSchemaName": "",
+    "DBTableName": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "TableType": "SQ"
+   },
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "ExtPriceDtl",
+    "FieldName": "ExtPriceDtl",
+    "Alias": "Amt",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "31c8f408-1e46-570d-b23a-8e4ff2b1c0c1",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "31c8f408-1e46-570d-b23a-8e4ff2b1c0c1",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "ExtPriceDtl",
+    "FieldName": "ExtPriceDtl",
+    "Alias": "Amt",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   },
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "TableID": "w",
+    "DBSchemaName": "",
+    "DBTableName": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PartNum",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Revenue",
+    "Alias": "Revenue",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "SUM(w.Amt)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [
+   {
+    "SubQueryID": "3d847322-052a-539f-a67d-a7a9b7c79880",
+    "TableID": "",
+    "FieldName": "SUM(w.Amt)",
+    "Seq": 1
+   }
+  ],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "aaebebf5-c573-5bd2-b23f-05cac9087829",
+    "TableID": "A",
+    "FieldName": "OrderNum",
+    "CompOp": "<",
+    "RValue": "100000",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "31c8f408-1e46-570d-b23a-8e4ff2b1c0c1",
+    "TableID": "B",
+    "FieldName": "OrderNum",
+    "CompOp": ">=",
+    "RValue": "100000",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

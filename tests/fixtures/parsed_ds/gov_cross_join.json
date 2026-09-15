@@ -1,0 +1,72 @@
+{
+ "sql": "select top 100 [A].[PartNum] as [P], count(*) as [N] from Erp.PartTran as [A] cross join Erp.Part as [B] group by [A].[PartNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 100.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "PartTran",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "PartTran",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "P",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "6a9be624-55e2-530b-9f45-40e381bfb223",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "N",
+    "Alias": "N",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "count(*)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

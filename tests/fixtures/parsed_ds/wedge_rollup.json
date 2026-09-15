@@ -1,0 +1,65 @@
+{
+ "sql": "select [OrderDtl].[PartNum] as [OrderDtl_PartNum], sum([OrderDtl].[ExtPriceDtl]) as [revenue] from Erp.OrderDtl as [OrderDtl] group by [OrderDtl].[PartNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "7fe00376-67c9-5186-b41d-aff97d78ffef",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "7fe00376-67c9-5186-b41d-aff97d78ffef",
+    "TableID": "OrderDtl",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "7fe00376-67c9-5186-b41d-aff97d78ffef",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "7fe00376-67c9-5186-b41d-aff97d78ffef",
+    "TableID": "OrderDtl",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "OrderDtl_PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "7fe00376-67c9-5186-b41d-aff97d78ffef",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "revenue",
+    "Alias": "revenue",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(OrderDtl.ExtPriceDtl)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

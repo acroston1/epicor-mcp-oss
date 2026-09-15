@@ -1,0 +1,79 @@
+{
+ "sql": "select count(*) as [DistinctParts] from (select distinct [OrderDtl].[PartNum] as [PartNum] from Erp.OrderDtl as [OrderDtl]) as [t]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "a417c6a4-9814-5cca-8a9a-80d6981d05e7",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "153f172c-b6aa-5ca8-bfe0-9060468f4fd1",
+    "Type": "InnerSubQuery",
+    "SelectListClause": "Distinct",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "153f172c-b6aa-5ca8-bfe0-9060468f4fd1",
+    "TableID": "OrderDtl",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "a417c6a4-9814-5cca-8a9a-80d6981d05e7",
+    "TableID": "t",
+    "DBSchemaName": "",
+    "DBTableName": "153f172c-b6aa-5ca8-bfe0-9060468f4fd1",
+    "TableType": "SQ"
+   },
+   {
+    "SubQueryID": "a417c6a4-9814-5cca-8a9a-80d6981d05e7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "153f172c-b6aa-5ca8-bfe0-9060468f4fd1",
+    "TableID": "OrderDtl",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PartNum",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "a417c6a4-9814-5cca-8a9a-80d6981d05e7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "DistinctParts",
+    "Alias": "DistinctParts",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "count(*)",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

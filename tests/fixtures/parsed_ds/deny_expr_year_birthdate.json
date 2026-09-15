@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [E].[EmpID] as [ID] from Erp.EmpBasic as [E] where year([E].[BirthDate]) = 1980",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "ee91274f-b734-5c2e-8ca8-7fac7a952c25",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "ee91274f-b734-5c2e-8ca8-7fac7a952c25",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "ee91274f-b734-5c2e-8ca8-7fac7a952c25",
+    "TableID": "E",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "ID",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "ee91274f-b734-5c2e-8ca8-7fac7a952c25",
+    "TableID": "",
+    "FieldName": "year(E.BirthDate)",
+    "CompOp": "=",
+    "RValue": "1980",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

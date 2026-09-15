@@ -1,0 +1,51 @@
+{
+ "sql": "select count(distinct [OD].[PartNum]) as [N] from Erp.OrderDtl as [OD]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "93e64117-1c40-5c4c-9afa-8452b01f4f4f",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "93e64117-1c40-5c4c-9afa-8452b01f4f4f",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "93e64117-1c40-5c4c-9afa-8452b01f4f4f",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "93e64117-1c40-5c4c-9afa-8452b01f4f4f",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "N",
+    "Alias": "N",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "count(OD.PartNum)",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

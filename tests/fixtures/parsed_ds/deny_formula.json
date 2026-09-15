@@ -1,0 +1,65 @@
+{
+ "sql": "select top 5 [LD].[JobNum] as [J], ([LD].[LaborRate] * [LD].[LaborHrs]) as [C] from Erp.LaborDtl as [LD]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "d178004b-234e-5d25-b6b7-7113f6162086",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "d178004b-234e-5d25-b6b7-7113f6162086",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "d178004b-234e-5d25-b6b7-7113f6162086",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "d178004b-234e-5d25-b6b7-7113f6162086",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "d178004b-234e-5d25-b6b7-7113f6162086",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "C",
+    "Alias": "C",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "(((LD.LaborRate * LD.LaborHrs)))",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

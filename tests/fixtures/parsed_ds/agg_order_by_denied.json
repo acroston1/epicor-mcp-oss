@@ -1,0 +1,73 @@
+{
+ "sql": "select top 10 [LD].[JobNum] as [J], sum([LD].[LaborRate]) as [R] from Erp.LaborDtl as [LD] group by [LD].[JobNum] order by sum([LD].[LaborRate]) desc",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 10.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "R",
+    "Alias": "R",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(LD.LaborRate)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [
+   {
+    "SubQueryID": "0ce6acae-9f1f-57b9-a046-b637d0b89fcd",
+    "TableID": "",
+    "FieldName": "sum(LD.LaborRate)",
+    "Seq": 1,
+    "IsAsc": false
+   }
+  ],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

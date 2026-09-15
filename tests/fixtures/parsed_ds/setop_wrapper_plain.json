@@ -1,0 +1,100 @@
+{
+ "sql": "select [w].[PN] as [PN] from (select [A].[PartNum] as [PN] from Erp.OrderDtl as [A] union all select [B].[PartNum] as [PN] from Erp.OrderDtl as [B]) as [w]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "26a03e6b-3dc1-5c43-b820-0edf23533d67",
+    "Type": "TopLevel",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "84d3345b-eed6-5354-b87a-86e6bda2efd6",
+    "Type": "InnerSubQuery",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   },
+   {
+    "SubQueryID": "156c41b3-44c2-5d49-b1df-0b252c18c19d",
+    "Type": "UnionAll",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "84d3345b-eed6-5354-b87a-86e6bda2efd6",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "156c41b3-44c2-5d49-b1df-0b252c18c19d",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "26a03e6b-3dc1-5c43-b820-0edf23533d67",
+    "TableID": "w",
+    "DBSchemaName": "",
+    "DBTableName": "84d3345b-eed6-5354-b87a-86e6bda2efd6",
+    "TableType": "SQ"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "84d3345b-eed6-5354-b87a-86e6bda2efd6",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "156c41b3-44c2-5d49-b1df-0b252c18c19d",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "26a03e6b-3dc1-5c43-b820-0edf23533d67",
+    "TableID": "w",
+    "DBSchemaName": "",
+    "DBTableName": "84d3345b-eed6-5354-b87a-86e6bda2efd6",
+    "DBFieldName": "PN",
+    "FieldName": "PN",
+    "Alias": "PN",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

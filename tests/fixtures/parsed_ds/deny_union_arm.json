@@ -1,0 +1,72 @@
+{
+ "sql": "select top 5 [P].[PartNum] as [X] from Erp.Part as [P] union all select top 5 [EB].[EmpID] as [X] from Erp.EmpBasic as [EB]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "21b17ed9-f4dc-5fd4-8322-11708907c0e9",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   },
+   {
+    "SubQueryID": "3fc49485-d53a-5595-93cb-ff4dd5cbc012",
+    "Type": "UnionAll",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "21b17ed9-f4dc-5fd4-8322-11708907c0e9",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "3fc49485-d53a-5595-93cb-ff4dd5cbc012",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "21b17ed9-f4dc-5fd4-8322-11708907c0e9",
+    "TableID": "P",
+    "DBSchemaName": "Erp",
+    "DBTableName": "Part",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "X",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "3fc49485-d53a-5595-93cb-ff4dd5cbc012",
+    "TableID": "EB",
+    "DBSchemaName": "Erp",
+    "DBTableName": "EmpBasic",
+    "DBFieldName": "EmpID",
+    "FieldName": "EmpID",
+    "Alias": "X",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

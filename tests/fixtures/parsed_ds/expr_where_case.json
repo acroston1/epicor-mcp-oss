@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [OD].[OrderNum] as [ON] from Erp.OrderDtl as [OD] where (case when [OD].[OrderQty] > 0 then 1 else 0 end) = 1",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "2afc0aee-7a84-51b7-bdc4-d5c0ffc519e0",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "2afc0aee-7a84-51b7-bdc4-d5c0ffc519e0",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "2afc0aee-7a84-51b7-bdc4-d5c0ffc519e0",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "OrderNum",
+    "FieldName": "OrderNum",
+    "Alias": "ON",
+    "DataType": "int",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "2afc0aee-7a84-51b7-bdc4-d5c0ffc519e0",
+    "TableID": "",
+    "FieldName": "(CASE \r\n\t\tWHEN OD.OrderQty > 0 THEN 1 \r\n\tELSE \r\n\t\t0 \r\n\tEND)",
+    "CompOp": "=",
+    "RValue": "1",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

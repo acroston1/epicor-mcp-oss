@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [OH].[OrderNum] as [ON] from Erp.OrderHed as [OH] where year([OH].[OrderDate]) = 2025",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "69c5acf6-6cf4-57a0-bb1d-0db618a06c82",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "69c5acf6-6cf4-57a0-bb1d-0db618a06c82",
+    "TableID": "OH",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderHed",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "69c5acf6-6cf4-57a0-bb1d-0db618a06c82",
+    "TableID": "OH",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderHed",
+    "DBFieldName": "OrderNum",
+    "FieldName": "OrderNum",
+    "Alias": "ON",
+    "DataType": "int",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "69c5acf6-6cf4-57a0-bb1d-0db618a06c82",
+    "TableID": "",
+    "FieldName": "year(OH.OrderDate)",
+    "CompOp": "=",
+    "RValue": "2025",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

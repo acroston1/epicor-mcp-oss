@@ -1,0 +1,2 @@
+# Additional denials, one schema-qualified table name per line.
+# These augment the built-in denylist and always take priority.

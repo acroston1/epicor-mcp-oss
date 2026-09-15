@@ -1,0 +1,57 @@
+{
+ "sql": "select top 5 [OD].[OrderNum] as [ON] from Erp.OrderDtl as [OD] where [OD].[OrderQty] * [OD].[UnitPrice] > 1000",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "6e1c29c4-4e1e-557a-9298-6e98b97e4993",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "6e1c29c4-4e1e-557a-9298-6e98b97e4993",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "6e1c29c4-4e1e-557a-9298-6e98b97e4993",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "OrderNum",
+    "FieldName": "OrderNum",
+    "Alias": "ON",
+    "DataType": "int",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "6e1c29c4-4e1e-557a-9298-6e98b97e4993",
+    "TableID": "",
+    "FieldName": "(OD.OrderQty * OD.UnitPrice)",
+    "CompOp": ">",
+    "RValue": "1000",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

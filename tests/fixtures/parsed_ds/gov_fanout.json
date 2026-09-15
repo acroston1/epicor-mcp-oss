@@ -1,0 +1,134 @@
+{
+ "sql": "select top 100 [A].[JobNum] as [J], sum([B].[QtyCompleted]) as [Q] from Erp.JobHead as [A] inner join Erp.JobOper as [B] on [A].[Company] = [B].[Company] and [A].[JobNum] = [B].[JobNum] inner join Erp.JobMtl as [C] on [A].[Company] = [C].[Company] and [A].[JobNum] = [C].[JobNum] where [A].[JobNum] = '100001' group by [A].[JobNum]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 100.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "B",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobOper",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "C",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobMtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "A",
+    "DBSchemaName": "Erp",
+    "DBTableName": "JobHead",
+    "DBFieldName": "JobNum",
+    "FieldName": "JobNum",
+    "Alias": "J",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "Q",
+    "Alias": "Q",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "sum(B.QtyCompleted)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "TableID": "A",
+    "FieldName": "JobNum",
+    "CompOp": "=",
+    "RValue": "'100001'",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "e8eb5463-4434-51d1-9403-aaf3e2ce30d7",
+    "ParentTableID": "A",
+    "ChildTableID": "B",
+    "JoinType": "Inner",
+    "OuterJoin": false
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "d1cb765c-9ca2-5260-b67a-086a07c34945",
+    "ParentTableID": "A",
+    "ChildTableID": "C",
+    "JoinType": "Inner",
+    "OuterJoin": false
+   }
+  ],
+  "QueryRelationField": [
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "e8eb5463-4434-51d1-9403-aaf3e2ce30d7",
+    "ParentFieldName": "Company",
+    "ChildFieldName": "Company"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "e8eb5463-4434-51d1-9403-aaf3e2ce30d7",
+    "ParentFieldName": "JobNum",
+    "ChildFieldName": "JobNum"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "d1cb765c-9ca2-5260-b67a-086a07c34945",
+    "ParentFieldName": "Company",
+    "ChildFieldName": "Company"
+   },
+   {
+    "SubQueryID": "21a172c1-bb83-5662-8d22-dc4a1ad53a84",
+    "RelationID": "d1cb765c-9ca2-5260-b67a-086a07c34945",
+    "ParentFieldName": "JobNum",
+    "ChildFieldName": "JobNum"
+   }
+  ],
+  "QueryGroupBy": []
+ }
+}

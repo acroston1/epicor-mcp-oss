@@ -1,0 +1,78 @@
+{
+ "sql": "select top 5 [OD].[PartNum] as [PN], count(*) as [N] from Erp.OrderDtl as [OD] group by [OD].[PartNum] having count(*) > 5",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "TableType": "TT"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": true,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "TableID": "Calculated",
+    "DBSchemaName": "",
+    "DBTableName": "",
+    "DBFieldName": "",
+    "FieldName": "N",
+    "Alias": "N",
+    "DataType": "",
+    "IsCalculated": true,
+    "Formula": "count(*)",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [
+   {
+    "SubQueryID": "c212eaa7-fbe4-5ec4-942d-5ab608ef73f7",
+    "TableID": "",
+    "FieldName": "count(*)",
+    "CompOp": ">",
+    "RValue": "5",
+    "IsConst": false,
+    "ToTableID": "",
+    "ToFieldName": "",
+    "UseHaving": false,
+    "Seq": 1
+   }
+  ],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

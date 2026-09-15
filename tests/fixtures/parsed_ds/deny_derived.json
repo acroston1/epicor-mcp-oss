@@ -1,0 +1,72 @@
+{
+ "sql": "select top 5 [t].[R] as [R] from (select [LD].[LaborRate] as [R] from Erp.LaborDtl as [LD]) as [t]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "175a7a4d-3734-5027-bf61-987ca80e8938",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   },
+   {
+    "SubQueryID": "263d9632-3168-5560-8c55-2a42f9f02b22",
+    "Type": "InnerSubQuery",
+    "SelectListClause": "All",
+    "TopInPercent": false,
+    "TopRowExpr": 0.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "263d9632-3168-5560-8c55-2a42f9f02b22",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "TableType": "DB"
+   },
+   {
+    "SubQueryID": "175a7a4d-3734-5027-bf61-987ca80e8938",
+    "TableID": "t",
+    "DBSchemaName": "",
+    "DBTableName": "263d9632-3168-5560-8c55-2a42f9f02b22",
+    "TableType": "SQ"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "263d9632-3168-5560-8c55-2a42f9f02b22",
+    "TableID": "LD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "LaborDtl",
+    "DBFieldName": "LaborRate",
+    "FieldName": "LaborRate",
+    "Alias": "R",
+    "DataType": "decimal",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "175a7a4d-3734-5027-bf61-987ca80e8938",
+    "TableID": "t",
+    "DBSchemaName": "",
+    "DBTableName": "263d9632-3168-5560-8c55-2a42f9f02b22",
+    "DBFieldName": "R",
+    "FieldName": "R",
+    "Alias": "R",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}

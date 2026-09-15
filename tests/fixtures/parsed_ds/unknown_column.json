@@ -1,0 +1,58 @@
+{
+ "sql": "select top 5 [OD].[PartNum] as [PN], [OD].[DocExtPrice] as [X] from Erp.OrderDtl as [OD]",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "SubQueryID": "32d62f97-e387-5efe-a67a-7be354554ca2",
+    "Type": "TopLevel",
+    "SelectListClause": "Top",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0
+   }
+  ],
+  "QueryTable": [
+   {
+    "SubQueryID": "32d62f97-e387-5efe-a67a-7be354554ca2",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "SubQueryID": "32d62f97-e387-5efe-a67a-7be354554ca2",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "PartNum",
+    "FieldName": "PartNum",
+    "Alias": "PN",
+    "DataType": "nvarchar",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 1
+   },
+   {
+    "SubQueryID": "32d62f97-e387-5efe-a67a-7be354554ca2",
+    "TableID": "OD",
+    "DBSchemaName": "Erp",
+    "DBTableName": "OrderDtl",
+    "DBFieldName": "DocExtPrice",
+    "FieldName": "DocExtPrice",
+    "Alias": "X",
+    "DataType": "",
+    "IsCalculated": false,
+    "Formula": "",
+    "IsGroupBy": false,
+    "Seq": 2
+   }
+  ],
+  "QuerySortBy": [],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}
