@@ -243,7 +243,7 @@ def test_health_reports_unwired_when_no_authorizer_was_built(app):
 
 def test_explain_includes_the_table_scope_block(app):
     """The APP-group tenant projects the AP services through the REAL service
-    index, so the scope comes back SCOPED (menu tables ∪ baseline) and — being
+    index, so the scope comes back SCOPED (exactly the menu tables — default deny) and — being
     a successful computation — PINNED for the process lifetime.
 
     The scope is computed HERE, in the test's own thread, before the request:

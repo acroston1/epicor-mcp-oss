@@ -6,8 +6,8 @@ The injected table-scope half of authorization. The built-in denylist (:mod:`epi
 denylist`) is absolute — payroll/PII is denied to everyone, SecurityMgr
 included. THIS gate is relative: a caller may read only the tables their own
 Epicor menu access reaches (e-mail -> Epicor username -> launchable menus ->
-BOs -> tables, computed in ``discovery/authz.py`` and unioned with a curated
-baseline). The scope object arrives already computed; nothing here performs a
+BOs -> tables, computed in ``discovery/authz.py``; default deny, nothing is
+unioned in). The scope object arrives already computed; nothing here performs a
 lookup, an HTTP call, or an import of the discovery package — this module is
 pure local CPU, which is what lets it live under ``sql/`` at all
 (``test_query_no_write_methods.py`` pins the Epicor endpoint set over every

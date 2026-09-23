@@ -39,8 +39,8 @@ from tests.wedge_fixtures import MockEpicorClient, load, names, ok_execute
 BASE = "https://example.invalid/api/v2/odata/DEMO"
 
 # Real AuthzScope objects — the gate's whole membership contract in four values.
-PART_ONLY = AuthzScope.scoped("user@example.org", {"Part"}, "menu chain + curated baseline")
-NO_PART = AuthzScope.scoped("user@example.org", {"JobHead"}, "menu chain + curated baseline")
+PART_ONLY = AuthzScope.scoped("user@example.org", {"Part"}, "menu chain")
+NO_PART = AuthzScope.scoped("user@example.org", {"JobHead"}, "menu chain")
 UNLIMITED = AuthzScope.unlimited("mgr@example.org", "SecurityMgr — every table is reachable")
 UNAVAILABLE = AuthzScope.unavailable("user@example.org", "snapshot failed: Boom")
 

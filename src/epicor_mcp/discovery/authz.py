@@ -1,4 +1,4 @@
-'Table-level authorization — a GATE, with a curated baseline.'
+'Table-level authorization — a GATE, default deny: scoped users reach only menu-mapped tables.'
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from epicor_mcp.discovery.baseline import BASELINE_TABLES
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class ScopeState(enum.Enum):
     refuses the combinations that would blur them."""
 
     UNLIMITED = "unlimited"      # SecurityMgr / allow_all / mode=off: nothing filtered
-    SCOPED = "scoped"            # menu-chain tables ∪ BASELINE_TABLES
+    SCOPED = "scoped"            # menu-chain tables only (default deny)
     UNAVAILABLE = "unavailable"  # identity/snapshot failure: fail CLOSED in gate mode
 
 
@@ -142,8 +141,8 @@ class AuthzScope:
             "boost": "are ranked higher — nothing is hidden",
         }.get(mode, "define this caller's table scope")
         return (
-            f"Tables {self.email} can reach through the Epicor menu, plus the "
-            f"curated baseline, {verb} ({len(self.tables or ())} tables via "
+            f"Tables {self.email} can reach through the Epicor menu "
+            f"{verb} ({len(self.tables or ())} tables via "
             f"{self.service_count} business objects)."
         )
 
@@ -284,11 +283,11 @@ class TableAuthorizer:
         services = sorted(getattr(snap, "allowed_services", ()) or ())
         if not services:
             # A SUCCESSFUL snapshot that grants no menus is an authorization
-            # ANSWER, not a failure: the user gets the curated floor. Cached.
+            # ANSWER, not a failure: no tables (default deny). Cached.
             return AuthzScope.scoped(
                 email,
-                BASELINE_TABLES,
-                "menu chain resolved zero services — curated baseline only",
+                frozenset(),
+                "menu chain resolved zero services — no tables",
             )
 
         tables: set[str] = set()
@@ -314,7 +313,7 @@ class TableAuthorizer:
             )
         return AuthzScope.scoped(
             email,
-            frozenset(tables) | BASELINE_TABLES,
-            "menu chain + curated baseline",
+            frozenset(tables),
+            "menu chain",
             service_count=len(services),
         )

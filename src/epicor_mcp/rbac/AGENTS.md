@@ -26,8 +26,8 @@ operator's table whitelist; `azure_ad` uses per-user Epicor menu-derived scope.
 - `allows()` checks `sql/denylist.is_denied_table` first: a denied table is refused even when listed.
 - Every authorizer failure (exception, unavailable scope, empty identity in gate mode)
   fails closed with zero Epicor calls.
-- Menu-derived scope adds `discovery/baseline.BASELINE_TABLES` and `_UD` mirror
-  inheritance; the whitelist adds neither.
+- Menu-derived scope is default deny: exactly the menu-mapped tables plus `_UD` mirror
+  inheritance (no baseline); the whitelist adds no mirror inheritance.
 - `UserMap` admin keys come only from `EPICOR_MCP_CREDENTIALS_PATH` (`api_key`,
   `baq_api_key`, `write_api_key`) or `department_keys.json`; never from `$HOME`.
 - Epicor group mappings default to empty. Keys and department names are non-empty,

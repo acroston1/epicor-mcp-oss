@@ -156,8 +156,9 @@ keys. Keep this file private even if its initial version contains placeholders.
 - In `none` mode, every caller shares the exact configured whitelist and cannot
   save BAQs. An empty whitelist grants nothing.
 - In `azure_ad` mode, ad-hoc SQL and discovery use the authenticated user's Epicor
-  menu-derived table scope, including the retained engine's small baseline of
-  related tables and `_UD` mirror inheritance. The `none`-mode whitelist does
+  menu-derived table scope — default deny: only tables reachable from menus the
+  user can launch, plus `_UD` mirror inheritance. Tables no menu maps are
+  reachable only by SecurityMgr users. The `none`-mode whitelist does
   **not** add a second restriction to SSO mode.
 - Saved BAQs in SSO mode retain Epicor's saved-BAQ grant model. Their parsed
   definitions are checked against the sensitive table/column denylist, while

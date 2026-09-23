@@ -515,7 +515,7 @@ def parent_only_scope(monkeypatch):
     `AuthzScope.allows`' UD inheritance. The compatibility branch supplies
     inheritance for isolated runs against older authorization implementations."""
     scope = AuthzScope.scoped(
-        "ud@example.org", {"Customer"}, "menu chain + curated baseline"
+        "ud@example.org", {"Customer"}, "menu chain"
     )
     if not scope.allows("Erp.Customer_UD"):  # pragma: no cover — inheritance landed
         real = AuthzScope.allows

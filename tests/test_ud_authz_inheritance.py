@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from epicor_mcp.discovery.authz import AuthzScope
-from epicor_mcp.discovery.baseline import BASELINE_TABLES
+import asyncio
+
+from epicor_mcp.discovery.authz import AuthzScope, TableAuthorizer
 from epicor_mcp.discovery.tools import register_discovery_tools
 from epicor_mcp.sql import denylist, scope_gate
 from epicor_mcp.sql.denylist import is_denied_column, is_denied_table
@@ -63,12 +64,42 @@ def test_unlimited_is_unchanged():
     assert scope.allows("_UD")  # UNLIMITED never reaches the strip logic
 
 
-def test_the_curated_baseline_extends_to_its_mirrors():
-    """The zero-services floor: a baseline table's custom columns are reachable
-    without any menu grant, exactly like the table itself."""
-    scope = AuthzScope.scoped("u@x", BASELINE_TABLES, "curated baseline only")
-    assert scope.allows("Erp.JobHead_UD")
-    assert scope.allows("Customer_UD")
+def test_an_empty_default_deny_scope_reaches_no_mirror_either():
+    """Default deny: a zero-service user's scope is EMPTY, so inheritance has
+    no parent to follow — no table and no mirror is reachable without a menu
+    grant."""
+    scope = AuthzScope.scoped("u@x", frozenset(), "menu chain resolved zero services — no tables")
+    for name in ("Erp.JobHead_UD", "JobHead_UD", "Customer_UD", "Part_UD",
+                 "PartMtl_UD", "JobHead", "_UD"):
+        assert not scope.allows(name), name
+
+
+class _OneSnap:
+    def __init__(self, services):
+        self.is_error = self.security_mgr = self.allow_all = False
+        self.error = ""
+        self.allowed_services = tuple(services)
+
+    async def ensure_snapshot(self, email):
+        return self
+
+
+class _SvcIndex:
+    def get_entity_sets(self, sid):
+        return {"Erp.BO.JobEntrySvc": ["JobHeads"]}.get(sid, [])
+
+
+def test_a_menu_projected_parent_extends_to_its_mirror_through_the_real_authorizer():
+    """The inheritance on a scope the REAL TableAuthorizer computed from a menu
+    snapshot (default deny): the menu-mapped parent's mirror is reachable; a
+    table no menu granted — and its mirror — is not."""
+    snap = _OneSnap(["Erp.BO.JobEntrySvc"])
+    scope = asyncio.run(
+        TableAuthorizer(snap, _SvcIndex(), mode="gate").scope_for("u@example.org")
+    )
+    assert scope.allows("Erp.JobHead") and scope.allows("Erp.JobHead_UD")
+    for name in ("Customer", "Customer_UD", "PartMtl", "PartMtl_UD", "Part_UD"):
+        assert not scope.allows(name), name
 
 
 # --------------------------------------------------------------------------- #
@@ -224,7 +255,7 @@ def _ds(*qualified: str) -> dict:
 def test_scope_gate_passes_the_prescribed_ud_join_for_a_scoped_parent():
     """The O1 loop, closed: the join `epicor_fields` prescribes now clears the
     gate for any caller whose scope covers the parent."""
-    scope = AuthzScope.scoped("u@x", {"JobHead"}, "menu chain + curated baseline")
+    scope = AuthzScope.scoped("u@x", {"JobHead"}, "menu chain")
     assert (
         scope_gate.check_table_scope(scope, _ds("Erp.JobHead", "Erp.JobHead_UD"))
         is None
@@ -232,7 +263,7 @@ def test_scope_gate_passes_the_prescribed_ud_join_for_a_scoped_parent():
 
 
 def test_scope_gate_still_refuses_an_out_of_scope_parents_mirror():
-    scope = AuthzScope.scoped("u@x", {"JobHead"}, "menu chain + curated baseline")
+    scope = AuthzScope.scoped("u@x", {"JobHead"}, "menu chain")
     env = scope_gate.check_table_scope(
         scope, _ds("Erp.Customer", "Erp.Customer_UD")
     )

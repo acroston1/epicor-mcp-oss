@@ -9,7 +9,6 @@ from epicor_mcp.discovery.authz import (
     TableAuthorizer,
     normalize_table,
 )
-from epicor_mcp.discovery.baseline import BASELINE_TABLES
 from epicor_mcp.discovery.embeddings import (
     EndpointEmbedder,
     LocalEmbedder,
@@ -35,7 +34,6 @@ from epicor_mcp.discovery.tools import register_discovery_tools
 __all__ = [
     "ABBREV",
     "AuthzScope",
-    "BASELINE_TABLES",
     "DiscoveryIndex",
     "EMBED_DIM",
     "EndpointEmbedder",

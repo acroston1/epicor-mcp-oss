@@ -332,13 +332,8 @@ def denial_source(qualified: str) -> str:
 # one-strip inheritance all see a file entry with ZERO extra call sites. It is
 # deliberately NOT a second, parallel check anywhere else.
 #
-# BASELINE ORDERING (pinned by tests/test_table_blacklist.py):
-# discovery/baseline.py filters BASELINE_TABLES through `is_denied_table` at
-# IMPORT time, which can run before the blacklist installs — so a blacklisted
-# table may sit inside the baseline frozenset for the life of the process. That
-# is ACCEPTABLE because deny beats scope at every DECISION point: the deny-list
-# is re-consulted live on every query and every discovery call, so the stale
-# snapshot can widen a scope only with names the deny-list then refuses anyway.
+# Deny beats scope at every DECISION point: the deny-list is re-consulted live
+# on every query and every discovery call.
 
 #: One blacklist entry: a bare or schema-qualified SQL identifier, optional
 #: trailing '*' prefix wildcard. Anything else — spaces, punctuation, a lone

@@ -26,10 +26,10 @@ The pinned behaviours, each with its reason:
 * the discovery tools hide it / refuse it with the blacklist wording;
 * startup wiring: ``server.create_app`` and ``wedge_server.create_mcp_server``
   both install from ``Settings.table_blacklist_path`` before tools serve;
-* BASELINE ORDERING: ``discovery/baseline.py`` deny-filters at IMPORT time, so
-  a blacklisted baseline member may sit in the frozenset forever — acceptable
-  because deny is re-consulted live at every decision point, which is exactly
-  what this file pins.
+* DENY BEATS SCOPE: a blacklisted table that IS in a user's menu scope is
+  still hidden from ``epicor_tables`` and refused by ``epicor_query`` — scope
+  membership never argues a table past the deny layer, because deny is
+  re-consulted live at every decision point.
 """
 
 from __future__ import annotations
@@ -348,7 +348,7 @@ async def _embed(text, prefix):
     return None
 
 
-def _register_discovery(index=None):
+def _register_discovery(index=None, authorizer=None):
     from epicor_mcp.discovery.tools import register_discovery_tools
     from epicor_mcp.sql.denylist import is_denied_column
 
@@ -366,7 +366,7 @@ def _register_discovery(index=None):
         _MCP(),
         index if index is not None else _Index(),
         embed_query=_embed,
-        authorizer=None,
+        authorizer=authorizer,
         denied_column=is_denied_column,
         denied_table=is_denied_table,
         denial_source=denial_source,
@@ -446,28 +446,91 @@ async def test_custom_columns_never_names_a_blacklisted_ud_mirror():
 
 
 # --------------------------------------------------------------------------- #
-# Baseline interplay — deny beats scope at DECISION time
+# Scope interplay — deny beats an IN-SCOPE table at DECISION time
 # --------------------------------------------------------------------------- #
-async def test_a_blacklisted_baseline_member_is_still_hidden_and_refused():
-    """`discovery/baseline.py` deny-filters at IMPORT time, which may precede
-    the install — so the frozenset legitimately still carries the table. That
-    is safe ONLY because every decision point re-consults `is_denied_table`
-    live; this test is the pin on that reasoning."""
-    from epicor_mcp.discovery.baseline import BASELINE_TABLES
+class _MenuSnap:
+    """A successful non-SecurityMgr snapshot granting the job-entry menu."""
 
-    assert "jobhead" in BASELINE_TABLES, "precondition: a real baseline member"
+    is_error = security_mgr = allow_all = False
+    error = ""
+    allowed_services = ("Erp.BO.JobEntrySvc",)
+
+    async def ensure_snapshot(self, email):
+        return self
+
+
+class _SvcIndex:
+    def get_entity_sets(self, sid):
+        return {"Erp.BO.JobEntrySvc": ["JobHeads"]}.get(sid, [])
+
+
+def _jobhead_query(authorizer):
+    """Run a JobHead read through the ad-hoc SQL seam (WedgeRuntime.run), the
+    DS DERIVED from the captured `clean_top` fixture with the table renamed."""
+    import asyncio
+    import copy
+
+    from tests.test_query_table_gate import runtime_for
+    from tests.wedge_fixtures import MockEpicorClient, load, ok_execute
+
+    _, ds = load("clean_top")
+    ds = copy.deepcopy(ds)
+    for row in ds["QueryTable"] + ds["QueryField"]:
+        row["DBTableName"] = "JobHead"
+    for row in ds["QueryField"]:
+        row["DBFieldName"] = row["FieldName"] = "JobNum"
+    sql = "select top 5 [P].[JobNum] as [PN] from Erp.JobHead as [P]"
+    client = MockEpicorClient(parse_ds=ds, execute_response=ok_execute([{"PN": "1"}]))
+    out = asyncio.run(runtime_for(client, authorizer=authorizer).run(sql=sql))
+    return out, client
+
+
+async def test_a_blacklisted_table_in_the_users_menu_scope_is_still_hidden_and_refused():
+    """Scope membership — purely menu-derived under default deny — never
+    outranks the deny layer. The REAL TableAuthorizer computes a SCOPED scope
+    holding JobHead from the user's menu; blacklisting JobHead must still hide
+    it from epicor_tables and refuse it on epicor_query (stage `denylist`,
+    never the scope gate)."""
+    from epicor_mcp.discovery.authz import ScopeState, TableAuthorizer
+
+    auth = TableAuthorizer(_MenuSnap(), _SvcIndex(), mode="gate",
+                           dev_identity="scoped@example.org")
+    scope = await auth.scope_for("scoped@example.org")
+    assert scope.state is ScopeState.SCOPED
+    assert scope.allows("Erp.JobHead"), "precondition: JobHead is IN the menu scope"
+
+    # Positive control BEFORE the install: in scope, not denied -> listed + runs.
+    tools = _register_discovery(authorizer=auth)
+    listing = await tools["epicor_tables"](query="jobs")
+    assert "Erp.JobHead" in [t["table"] for t in listing.get("tables", [])]
+    ok, ok_client = await asyncio_to_thread(_jobhead_query, auth)
+    assert ok["success"] is True, ok
+    assert ok_client.called("Execute")
+
     install_table_blacklist(["JobHead"], source="test")
-    # The import-time snapshot is stale by design...
-    assert "jobhead" in BASELINE_TABLES
-    # ...and every decision point refuses anyway:
+    assert scope.allows("Erp.JobHead"), "the scope itself is unchanged by the install"
     assert is_denied_table("Erp.JobHead")
-    denial = check_parsed_ds(_ds("JobHead"))
-    assert denial.denied_tables == ["Erp.JobHead"]
-    tools = _register_discovery()
-    resp = await tools["epicor_fields"](table="JobHead")
-    assert resp["error"] == "table_access_denied"
+    assert check_parsed_ds(_ds("JobHead")).denied_tables == ["Erp.JobHead"]
+
     listing = await tools["epicor_tables"](query="jobs")
     assert "Erp.JobHead" not in [t["table"] for t in listing.get("tables", [])]
+    resp = await tools["epicor_fields"](table="JobHead")
+    assert resp["error"] == "table_access_denied"
+
+    out, client = await asyncio_to_thread(_jobhead_query, auth)
+    assert out["success"] is False
+    assert out["error"] == "table_access_denied"
+    assert out["detail"]["stage"] == "denylist", "deny must fire BEFORE the scope gate"
+    assert "table blacklist" in out["message"]
+    assert not client.called("Execute")
+
+
+async def asyncio_to_thread(fn, *args):
+    """`_jobhead_query` owns its own event loop (asyncio.run); run it off the
+    test's running loop."""
+    import asyncio
+
+    return await asyncio.to_thread(fn, *args)
 
 
 # --------------------------------------------------------------------------- #
