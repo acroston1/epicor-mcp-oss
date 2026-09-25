@@ -133,10 +133,19 @@ def check_cost(
 
 
 def _check(ds: Mapping[str, Any], policy: GovernorPolicy) -> dict[str, Any] | None:
-    tables = [t for t in _rows(ds, "QueryTable") if t.get("TableType") == "DB"]
+    all_tables = _rows(ds, "QueryTable")
+    tables = [t for t in all_tables if t.get("TableType") == "DB"]
     by_sub: dict[str, list[Mapping[str, Any]]] = {}
     for t in tables:
         by_sub.setdefault(str(t.get("SubQueryID") or ""), []).append(t)
+    # EVERY node of each subquery, whatever its TableType — the join graph needs
+    # them. Epicor stores a CTE or derived-table reference as its own QueryTable
+    # row (`TableType == 'SQ'`) and its QueryRelation rows point AT that node.
+    nodes_by_sub: dict[str, list[str]] = {}
+    for t in all_tables:
+        nodes_by_sub.setdefault(str(t.get("SubQueryID") or ""), []).append(
+            str(t.get("TableID") or "")
+        )
     relations = _rows(ds, "QueryRelation")
     rel_fields = _rows(ds, "QueryRelationField")
     conjuncts = _literal_conjuncts(ds)
@@ -189,13 +198,24 @@ def _check(ds: Mapping[str, Any], policy: GovernorPolicy) -> dict[str, Any] | No
     for sub_id, subs in by_sub.items():
         if len(subs) < 2:
             continue
-        ids = [str(t.get("TableID") or "") for t in subs]
+        db_ids = {str(t.get("TableID") or "") for t in subs}
         edges = [
             (str(r.get("ParentTableID") or ""), str(r.get("ChildTableID") or ""))
             for r in relations
             if str(r.get("SubQueryID") or "") == sub_id
         ]
-        comps = _connected_components(ids, edges)
+        # Connectivity runs over ALL of the subquery's nodes, and only the DB
+        # tables are then asked whether they landed in one group. Measured: with
+        # DB tables as the only nodes, every edge to a
+        # CTE / derived table (`TableType == 'SQ'`) was dropped, so
+        # `Part ⋈ oh`, `PartCost ⋈ oh`, `PartPlant ⋈ oh` — each properly keyed —
+        # read as four unjoined tables and were refused as a cross join. A real
+        # cartesian routed through a CTE still splits the DB tables into two
+        # groups, and a Company-only edge to one is still rule 3's refusal.
+        ids = list(dict.fromkeys(nodes_by_sub.get(sub_id) or [])) or sorted(db_ids)
+        comps = [
+            c & db_ids for c in _connected_components(ids, edges) if c & db_ids
+        ]
         if len(comps) > 1:
             names = [_qualified(t) for t in subs]
             big = [n for n in names if _is_big(n)]

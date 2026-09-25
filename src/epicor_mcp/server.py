@@ -31,6 +31,7 @@ from jose import JWTError
 
 from mcp.server.fastmcp import FastMCP
 
+from epicor_mcp import __version__
 from epicor_mcp.auth.credentials import CredentialManager, create_default_department_keys_file
 from epicor_mcp.auth.oauth import AzureADTokenValidator
 from epicor_mcp.auth.session import MCPSession, SessionStore
@@ -979,7 +980,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title="Epicor Kinetic MCP Server",
-        version="0.1.0",
+        version=__version__,
         lifespan=lifespan,
     )
 
@@ -1298,7 +1299,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             "status": "healthy",
             "server": "epicor-mcp-server",
-            "version": "0.1.0",
+            "version": __version__,
             "environment": settings.environment,
             "active_sessions": session_store.active_count,
             "departments": credential_manager.departments,

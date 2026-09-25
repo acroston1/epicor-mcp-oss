@@ -385,8 +385,8 @@ async def read_bom(
 
     # --- Pull a job's method via GetByID -------------------------------------
     # The child OData collections (JobMtls/JobOpers) are unreliable — they come
-    # back EMPTY for jobs whose method GetByID returns in full (verified: job
-    # N261215 → 0 via collections, 9 JobMtl + 5 JobOper via GetByID). Same trap
+    # back EMPTY for jobs whose method GetByID returns in full (verified on a
+    # live job: 0 rows via collections, 9 JobMtl + 5 JobOper via GetByID). Same trap
     # as vendor/customer contacts, so use the parent GetByID dataset here too.
     async def _job_method(jobnum: str) -> tuple[list[dict], list[dict]]:
         try:

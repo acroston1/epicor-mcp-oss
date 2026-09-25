@@ -82,7 +82,13 @@ from epicor_mcp.sql.governor import (
     timeout_envelope,
 )
 from epicor_mcp.sql.next_step import annotate_next_step
-from epicor_mcp.sql.transpile import WEDGE_POLICY, Outcome, transpile
+from epicor_mcp.sql.transpile import (
+    SORT_KEY_MAX_CHARS,
+    WEDGE_POLICY,
+    Outcome,
+    transpile,
+    wrap_sort_in_cte,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -653,6 +659,7 @@ async def run_sql(
     ground_domains: bool = True,
     lint_fanout_warning: bool = False,
     table_scope: Any = None,
+    _sort_wrapped: bool = False,
 ) -> dict[str, Any]:
     """Run one SELECT and return rows, or an INV-1 envelope. Never raises.
 
@@ -662,6 +669,10 @@ async def run_sql(
     wedge server and every existing test untouched. ``server.py`` injects a
     real scope through ``WedgeRuntime`` when ``EPICOR_MCP_TABLE_AUTHZ_MODE`` is
     ``gate``.
+
+    *_sort_wrapped* is private: it marks the ONE re-entry made after step 3c
+    re-wrote an over-long ORDER BY into a CTE, so a second long key refuses
+    instead of wrapping again.
     """
     started = time.monotonic()
     stage_ms: dict[str, float] = {}
@@ -853,6 +864,51 @@ async def run_sql(
                 (authz_refusal.get("detail") or {}).get("unauthorized_tables"),
             )
             return authz_refusal
+
+    # --- 3c. sort keys Epicor cannot store ------------------------------
+    # After the deny-list and the scope gate (deny beats everything), before
+    # the lint. Measured: Epicor stores each ORDER BY term as its OWN rendering
+    # in QuerySortBy.FieldName, and a key over 125 characters fails at Execute
+    # with "An object or column name is missing or empty" — CASE or no CASE.
+    # Only the parsed DS knows that length, so this is the earliest point it can
+    # be seen. The outer ORDER BY is re-written ONCE into a CTE that sorts on a
+    # named column, and the rewritten statement re-enters the pipe from the top
+    # so every gate judges what will actually run.
+    long_keys = _long_sort_keys(queryds)
+    if long_keys:
+        wrap = None if _sort_wrapped else wrap_sort_in_cte(sql_to_run)
+        if wrap is not None and wrap.sql:
+            inner = await run_sql(
+                wrap.sql,
+                client=client,
+                api_key=api_key,
+                base_url=base_url,
+                page_size=page_size,
+                page_num=page_num,
+                governor=governor,
+                session_id=session_id,
+                max_bytes=max_bytes,
+                diagnose=diagnose,
+                probe_budget=probe_budget,
+                domain_cache=domain_cache,
+                company_id=company_id,
+                validate_columns=validate_columns,
+                ground_domains=ground_domains,
+                lint_fanout_warning=lint_fanout_warning,
+                table_scope=table_scope,
+                _sort_wrapped=True,
+            )
+            return _merge_sort_wrap(inner, assumptions, wrap.transformation, started)
+        return _sort_key_refusal(
+            long_keys,
+            sql_to_run,
+            why_not=(
+                wrap.why_not
+                if wrap is not None
+                else "the over-long key is inside a CTE, derived table or subquery "
+                "rather than the outer ORDER BY"
+            ),
+        )
 
     # --- 4. lint ----------------------------------------------------------
     lint_started = time.monotonic()
@@ -1239,6 +1295,91 @@ async def run_sql(
     return annotate_next_step(result)
 
 
+def _long_sort_keys(queryds: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """QuerySortBy rows whose rendered key is longer than Epicor can store."""
+    rows = queryds.get("QuerySortBy") or queryds.get("QuerySortByDesigner") or []
+    out = []
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        key = str(row.get("FieldName") or "")
+        if len(key) > SORT_KEY_MAX_CHARS:
+            out.append({"length": len(key), "sort_key": key[:200]})
+    return out
+
+
+def _merge_sort_wrap(
+    inner: dict[str, Any],
+    outer_assumptions: Mapping[str, Any],
+    wrap_tx: Any,
+    started: float,
+) -> dict[str, Any]:
+    """Put the FIRST pass's assumptions back in front of the re-entered run's.
+
+    The re-entry transpiles the wrapped statement afresh, so on its own it would
+    forget every rewrite the caller's statement already received (an
+    `order_by_alias`, an injected `top`) and misreport the row bound as the
+    caller's. The row bound belongs to the caller's statement, so the first
+    pass's wins.
+    """
+    wrap_dict = wrap_tx.to_dict() if wrap_tx is not None else None
+    if not inner.get("success"):
+        detail = inner.setdefault("detail", {})
+        if isinstance(detail, dict) and wrap_dict:
+            detail["sort_key_wrapped"] = wrap_dict
+        return inner
+    got = inner.get("assumptions") or {}
+    merged: dict[str, Any] = {}
+    rewrites = list(outer_assumptions.get("rewrites") or [])
+    if wrap_dict:
+        rewrites.append(wrap_dict)
+    seen = {(r.get("rule"), r.get("before")) for r in rewrites}
+    rewrites += [r for r in got.get("rewrites") or [] if (r.get("rule"), r.get("before")) not in seen]
+    if rewrites:
+        merged["rewrites"] = rewrites
+    advisories = list(outer_assumptions.get("advisories") or [])
+    seen_adv = {a.get("rule") for a in advisories}
+    advisories += [a for a in got.get("advisories") or [] if a.get("rule") not in seen_adv]
+    if advisories:
+        merged["advisories"] = advisories
+    row_bound = outer_assumptions.get("row_bound") or got.get("row_bound")
+    if row_bound:
+        merged["row_bound"] = row_bound
+    inner["assumptions"] = merged
+    inner["elapsed_s"] = round(time.monotonic() - started, 3)
+    return inner
+
+
+def _sort_key_refusal(
+    long_keys: list[dict[str, Any]], sql: str, *, why_not: str
+) -> dict[str, Any]:
+    worst = max(k["length"] for k in long_keys)
+    return error_envelope(
+        "sql_sort_key_too_long",
+        f"An ORDER BY expression is {worst} characters as Epicor renders it. Epicor stores at "
+        f"most {SORT_KEY_MAX_CHARS} characters per sort key, and a longer one fails at "
+        "execution with `An object or column name is missing or empty` — this has nothing to "
+        "do with CASE or any other construct in it. The server could not re-write it "
+        f"automatically because {why_not}. Fix: compute the expression as a named column in "
+        "a CTE and sort on that column.",
+        evidence="measured against Epicor Kinetic: a rendered sort key of 125 characters runs "
+        "and 126 fails, stepped over 122..134 on one expression; the CTE form returned the "
+        "independently computed top N",
+        valid={
+            "shape": "with [q] as (select [A].[Col] as [Col], <long expression> as [SortKey] "
+            "from Erp.A as [A] where …) select top 100 [q].[Col] as [Col] from [q] order by "
+            "[q].[SortKey] desc",
+            "max_sort_key_chars": SORT_KEY_MAX_CHARS,
+        },
+        detail={
+            "stage": "sort_key",
+            "long_sort_keys": long_keys,
+            "sql_sent": sql,
+            "checked_before_running": True,
+        },
+    )
+
+
 async def _analyze(
     client: Any, api_key: str, base_url: str, queryds: Mapping[str, Any]
 ) -> list[str]:
@@ -1247,8 +1388,9 @@ async def _analyze(
     error-envelope contract: *recover* with Analyze, do not pre-flight with it — pre-flighting
     costs an extra round trip on every success to save one on failures. When Analyze
     returns *"An object or column name is missing or empty…"* the message is a
-    mask produced by an aggregate ORDER BY, so the sort is stripped and it is
-    re-analysed.
+    mask produced by a sort key Epicor cannot store (step 3c refuses the
+    measured over-length case before Execute; anything else that trips it lands
+    here), so the sort is stripped and it is re-analysed.
     """
     async def _call(ds: Mapping[str, Any]) -> list[str]:
         try:
@@ -1274,6 +1416,6 @@ async def _analyze(
         if retry:
             return retry + [
                 "(the ORDER BY was stripped and the query re-analysed — "
-                "'missing or empty' is a mask produced by an aggregate sort)"
+                "'missing or empty' is the mask Epicor gives a sort key it cannot store)"
             ]
     return msgs

@@ -20,25 +20,24 @@ from epicor_mcp.sql.domains import ground
 from epicor_mcp.sql.grain import analyse_grain
 from epicor_mcp.sql.next_step import annotate_next_step
 ```
-`run_sql(sql, *, client, api_key, base_url, page_size, page_num, governor, session_id,
-max_bytes, ..., table_scope=None)` returns a result dict or an error envelope. It never
-raises and never returns a bare string. `table_scope=None` is ungated and byte-identical
-to pre-gate behaviour. Everything else is private.
+`run_sql(sql, *, client, api_key, base_url, page_size, page_num, governor, session_id, ...,
+table_scope=None)` returns a result dict or an error envelope, never raises. `table_scope=None`
+is ungated and byte-identical to pre-gate behaviour. Everything else is private.
 
 ## Invariants
-1. Nothing persists. The only Epicor endpoints reachable from `sql/` are `ParseFromSQL`,
-   `Execute` and `Analyze`; `tests/test_query_no_write_methods.py` scans `sql/*.py` and
-   `wedge_server.py` to prove it. Saving lives in `baq_ops/`.
+1. Nothing persists: `sql/` reaches only `ParseFromSQL`, `Execute`, `Analyze` (proved by
+   `tests/test_query_no_write_methods.py` over `sql/*.py` + `wedge_server.py`). Saving is `baq_ops/`.
 2. Gate order is fixed: transpile, paging, validate_columns, parse, denylist, authz
-   (scope gate), lint, governor, execute. A refusal names its gate in `detail.stage`.
+   (scope gate), sort_key, lint, governor, execute; a refusal names it in `detail.stage`.
+   `sort_key`: an ORDER BY key > 125 rendered chars fails at Execute ("column name is missing
+   or empty", CASE or not), so it is wrapped in a CTE once and the whole pipe re-entered.
 3. Deny beats everything, including SecurityMgr. For ad-hoc SQL an unattributable column
    reference denies (`check_parsed_ds(..., unattributed_denies=True)`).
 4. One channel per claim: `assumptions` (what the server rewrote), `notes` (advisory),
    `grain_checks` (offered, never auto-run), `diagnosis` (zero-row page 1 only),
    `next_step` (derived from the others; only `WedgeRuntime._run_and_save` may overwrite it),
    `saved` (owned by `baq_ops`). A refusal is an error envelope with `retry_with`.
-5. The dialect requires `select top N`; there is no ORDER BY peel. Paging refusals key on
-   the transpiler's `row_bound`.
+5. The dialect requires `select top N`; no ORDER BY peel. Paging refusals key on `row_bound`.
 6. `load_catalogue()` reads CWD `data/schema_catalogue.json`: rich fields/types or legacy lists.
    Process env `EPICOR_MCP_COLUMN_CATALOGUE` path list wins over `EPICOR_MCP_SCHEMA_CATALOGUE`.
    Missing/malformed/Swagger metadata abstains; only Erp metadata judges Erp columns.
@@ -53,8 +52,9 @@ to pre-gate behaviour. Everything else is private.
 
 ## Gotchas
 - `check_cost` runs on ad-hoc SQL only; saved BAQs skip it (parameters are not literals).
-- `sql_execute_timeout_s` (25 s), `sql_max_inflight` (2) and `sql_session_budget_s`
-  (120 s) bound every execution regardless of gate outcome.
+- `sql_execute_timeout_s` (25 s), `sql_max_inflight` (2), `sql_session_budget_s` (120 s) bound every run.
 - `validate_columns` returns `ok=False` only for a provably absent column; CTE outputs,
   unresolved aliases and uncatalogued tables report `skipped`, not failure.
+- ON conjuncts are filed under their LEFT table; under an earlier-joined table they fail
+  ("could not be bound"). Transpiler: swap sides, else WHERE (inner only), else refuse.
 - Epicor status 0/408 is terminal `epicor_unreachable`, 401/403 `epicor_auth_error`: never SQL errors.

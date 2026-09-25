@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epicor-mcp-oss"
-version = "0.1.0"
+version = "0.1.1"
 description = "Configurable Epicor Kinetic MCP framework with read-only table access and optional document retrieval."
 readme = "README.md"
 license = "Apache-2.0"

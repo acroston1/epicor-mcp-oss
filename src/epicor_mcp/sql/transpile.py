@@ -62,6 +62,9 @@ __all__ = [
     "TranspileResult",
     "transpile",
     "DIALECT",
+    "SORT_KEY_MAX_CHARS",
+    "SortWrap",
+    "wrap_sort_in_cte",
 ]
 
 DIALECT = "tsql"
@@ -1672,6 +1675,454 @@ def _pass_ud_mirror_joins(
         )
 
 
+#: Measured against Epicor Kinetic with a raw parse+execute matrix. Kept in one
+#: place so the rewrites and the refusal cite one measurement.
+_JOIN_ON_EVIDENCE = (
+    "measured: ParseFromSQL keeps ONE parent per join — the other table of the "
+    "FIRST conjunct linking the joined table — and files every other ON conjunct as a "
+    "criterion of the table on its LEFT-hand side. A criterion of the joined table or of "
+    "the FROM table is fine (rendered in the join's own ON / in WHERE); a criterion of an "
+    "EARLIER JOINED table is rendered inside THAT table's join, before this one is in "
+    "scope: `inner join Erp.PartCost as [PC] on [W].[Company] = [PC].[Company] and "
+    "[PL].[PlantCostID] = [PC].[CostID]` fails at Execute with `The multi-part identifier "
+    "\"PC.CostID\" could not be bound.` Written `[PC].[CostID] = [PL].[PlantCostID]` it "
+    "runs and returned the same rows as the WHERE form; as a LEFT join the swapped form "
+    "returned the same rows as an independent CTE formulation"
+)
+
+#: A comparison whose operands can be exchanged by flipping the operator.
+_FLIP: dict[type, type] = {
+    exp.EQ: exp.EQ, exp.NEQ: exp.NEQ,
+    exp.GT: exp.LT, exp.LT: exp.GT, exp.GTE: exp.LTE, exp.LTE: exp.GTE,
+}
+
+
+def _join_conjuncts(on: exp.Expression) -> list[exp.Expression]:
+    inner = on.unnest()
+    return list(inner.flatten()) if isinstance(inner, exp.And) else [inner]
+
+
+def _is_inner_join(join: exp.Join) -> bool:
+    return not (join.side or "") and (join.kind or "").upper() in ("", "INNER")
+
+
+def _join_label(node: exp.Expression) -> str:
+    """``Erp.PartCost as [PC]`` for a table, ``[LT]`` for a derived table — never its body."""
+    alias = node.alias_or_name or ""
+    if isinstance(node, exp.Table):
+        name = ".".join(p for p in (node.db, node.name) if p)
+        return f"{name} as [{alias}]" if node.alias else name
+    return f"[{alias}]"
+
+
+def _filed_under(conj: exp.Expression) -> str | None:
+    """The table Epicor files this conjunct under: its LEFT operand's, if a column.
+
+    ``None`` when the left operand is not a bare column — Epicor's filing of an
+    expression-led conjunct is unmeasured, so nothing is decided on it.
+    """
+    left = conj.this if isinstance(conj, exp.Binary) or conj.args.get("this") is not None else None
+    left = left.unnest() if isinstance(left, exp.Expression) else None
+    if isinstance(left, exp.Column) and left.table and not isinstance(left.this, exp.Star):
+        return left.table.lower()
+    return None
+
+
+def _swapped(conj: exp.Expression, child: str) -> exp.Expression | None:
+    """``[T].[x] op [C].[y]`` -> ``[C].[y] op' [T].[x]``, or None if not that shape."""
+    flip = _FLIP.get(type(conj))
+    if flip is None:
+        return None
+    right = conj.expression.unnest() if conj.expression is not None else None
+    if not (isinstance(right, exp.Column) and (right.table or "").lower() == child):
+        return None
+    return flip(this=right.copy(), expression=conj.this.copy())
+
+
+def _column_equality(conj: exp.Expression) -> bool:
+    return isinstance(conj, exp.EQ) and all(
+        isinstance(side, exp.Column) for side in (conj.this.unnest(), conj.expression.unnest())
+    )
+
+
+def _company_only(linking: list[tuple[exp.Expression, str]], table: str) -> bool:
+    """Every conjunct linking the joined table to *table* is ``Company = Company``."""
+    conds = [c for c, t in linking if t == table]
+    return bool(conds) and all(
+        isinstance(c, exp.EQ)
+        and all(
+            isinstance(side, exp.Column) and side.name.lower() == "company"
+            for side in (c.this.unnest(), c.expression.unnest())
+        )
+        for c in conds
+    )
+
+
+def _pass_join_on_third_table(root: exp.Expression, tx: list[Transformation]) -> None:
+    """Keep every ON conjunct where Epicor will render it in scope.
+
+    Epicor files each ON conjunct under the table on its LEFT-hand side (see
+    :data:`_JOIN_ON_EVIDENCE`). A conjunct is left exactly as written when it
+    only names the joined table and its parent, when the joined table is on
+    its left, or when it is filed under the FROM table inside an inner join
+    (rendered in WHERE — measured working). Otherwise it
+    would be rendered inside an EARLIER join where the joined table is not yet
+    in scope, and it is repaired, in order of preference:
+
+    1. **swap the sides** (``[PL].[X] = [PC].[Y]`` -> ``[PC].[Y] = [PL].[X]``)
+       when the other operand is a bare column of the joined table. It stays in
+       the join's own ON, so inner AND outer joins keep their meaning;
+    2. **move it to WHERE** for an inner join in a select with no RIGHT/FULL
+       join — the same rows for an inner join;
+    3. otherwise **REFUSE**: WHERE would turn an outer join into an inner one.
+
+    Anything this cannot read with certainty — an unqualified column, a
+    subquery or EXISTS in the ON, an expression-led conjunct, no conjunct
+    linking the joined table to one other — is left UNTOUCHED: Epicor's own
+    error is then the answer, and a guess here is not.
+
+    Before any of that, the PARENT is chosen the way Epicor chooses it — the
+    other table of the first linking conjunct — except that a Company-only
+    first link yields to a table the joined table shares a real key with
+    (``join_on_parent_reordered``); see the comment at the choice.
+
+    Two phases: every join is PLANNED before any is changed, so a refusal
+    never arrives carrying rewrites it did not make.
+    """
+    plans: list[tuple] = []
+    for select in root.find_all(exp.Select):
+        joins = select.args.get("joins") or []
+        if not joins:
+            continue
+        frm = select.args.get("from") or select.args.get("from_")
+        root_alias = (frm.this.alias_or_name or "").lower() if frm is not None else ""
+        right_or_full = any((j.side or "").upper() in ("RIGHT", "FULL") for j in joins)
+        for join in joins:
+            on = join.args.get("on")
+            child = (join.this.alias_or_name or "").lower() if join.this else ""
+            if on is None or not child or on.find(exp.Subquery, exp.Exists):
+                continue
+            conjuncts = _join_conjuncts(on)
+            refs: list[set[str]] = []
+            spelled: dict[str, str] = {}
+            readable = True
+            for conj in conjuncts:
+                cols = [c for c in conj.find_all(exp.Column) if not isinstance(c.this, exp.Star)]
+                if any(not c.table for c in cols):
+                    readable = False
+                    break
+                for c in cols:
+                    spelled.setdefault(c.table.lower(), c.table)
+                refs.append({c.table.lower() for c in cols})
+            if not readable:
+                continue
+            # Only a plain `[A].[x] = [B].[y]` counts as a link: that is the shape
+            # measured becoming a relation. What Epicor makes of an expression-led
+            # link is unmeasured, so it never chooses the parent.
+            linking = [
+                (conj, next(iter(r - {child})))
+                for conj, r in zip(conjuncts, refs)
+                if child in r and len(r - {child}) == 1 and _column_equality(conj)
+            ]
+            if not linking:
+                continue
+            # Epicor's parent is the other table of the FIRST linking conjunct.
+            # When that link is Company alone and the business key links the
+            # joined table to a DIFFERENT table, the relation Epicor builds is
+            # Company-only — a cartesian to the governor —
+            # while the key rides as a stray criterion. Leading with the key's
+            # table makes IT the parent. Same conjuncts, same AND: nothing else
+            # about the condition changes.
+            parent = linking[0][1]
+            reordered = False
+            if _company_only(linking, parent):
+                alt = next(
+                    (t for _, t in linking if t != parent and not _company_only(linking, t)),
+                    None,
+                )
+                if alt is not None:
+                    parent, reordered = alt, True
+            if reordered:
+                pairs = sorted(
+                    zip(conjuncts, refs), key=lambda cr: 0 if cr[1] == {child, parent} else 1
+                )
+                conjuncts = [c for c, _ in pairs]
+                refs = [r for _, r in pairs]
+            inner_ok = _is_inner_join(join) and not right_or_full
+            keep, swaps, moves, bad = [], [], [], []
+            for conj, r in zip(conjuncts, refs):
+                filed = _filed_under(conj)
+                if (
+                    r <= {child, parent}
+                    or filed == child
+                    or filed is None
+                    or (filed == root_alias and inner_ok)
+                ):
+                    keep.append(conj)
+                    continue
+                swapped = _swapped(conj, child)
+                if swapped is not None:
+                    keep.append(swapped)
+                    swaps.append((conj, swapped))
+                elif inner_ok:
+                    moves.append(conj)
+                else:
+                    bad.append(conj)
+            if not (swaps or moves or bad or reordered):
+                continue
+            parent_name = spelled.get(parent, parent)
+            join_label = _join_label(join.this)
+            if bad:
+                why = (
+                    f"it is a {' '.join(p for p in (join.side, join.kind) if p).lower()} join"
+                    if not _is_inner_join(join)
+                    else "this select also has a RIGHT/FULL join, which could NULL-extend "
+                    "the columns the condition reads"
+                )
+                bad_sql = [_sql(c) for c in bad]
+                raise _Refusal(
+                    _envelope(
+                        "sql_join_on_third_table",
+                        f"The ON clause joining {join_label} has a condition Epicor will "
+                        f"evaluate in the wrong place: {'; '.join(f'`{c}`' for c in bad_sql)}. "
+                        "Epicor files an ON condition under the table on its LEFT-hand side, "
+                        "and a condition filed under an earlier joined table is evaluated "
+                        "inside THAT table's join, before this one is in scope — it fails at "
+                        "execution with `The multi-part identifier … could not be bound`. "
+                        f"The server cannot swap it (it does not compare a plain column of "
+                        f"{join_label}) and cannot move it to WHERE because {why}, which would "
+                        "silently drop the unmatched rows. Fix: write the condition with a "
+                        f"column of {join_label} on the LEFT (`[{join.this.alias_or_name}].[Col] "
+                        "= [Other].[Col]`), or compute the other side in a CTE first and join "
+                        "to that.",
+                        evidence=_JOIN_ON_EVIDENCE,
+                        valid={
+                            "shape": f"left outer join {join_label} on [{parent_name}].[Company] "
+                            f"= [{join.this.alias_or_name}].[Company] and "
+                            f"[{join.this.alias_or_name}].[Key] = [Other].[Key]"
+                        },
+                        detail={
+                            "join": join_label,
+                            "parent_table": parent_name,
+                            "misplaced_conditions": bad_sql,
+                        },
+                    )
+                )
+            plans.append(
+                (select, join, join_label, keep, swaps, moves, parent_name if reordered else "")
+            )
+
+    moved: dict[int, tuple[exp.Select, list[exp.Expression]]] = {}
+    for select, join, join_label, keep, swaps, moves, new_parent in plans:
+        on_before = _sql(join.args["on"])[:300]
+        if new_parent:
+            tx.append(
+                Transformation(
+                    rule="join_on_parent_reordered",
+                    message=f"Reordered the ON clause joining {join_label} so the conditions "
+                    f"linking it to [{new_parent}] come first. Epicor takes a join's parent from "
+                    "the FIRST condition that links it; the first one here linked a different "
+                    "table on Company alone, so Epicor would have recorded a Company-only join "
+                    "(a cartesian to the cost governor) and carried the real key as a stray "
+                    "condition. The conditions themselves are unchanged.",
+                    evidence=_JOIN_ON_EVIDENCE,
+                    before=on_before,
+                    after=_sql(exp.and_(*[c.copy() for c in keep]))[:300],
+                )
+            )
+        if swaps:
+            tx.append(
+                Transformation(
+                    rule="join_on_sides_swapped",
+                    message="Swapped the sides of "
+                    f"{'; '.join(f'`{_sql(a)}`' for a, _ in swaps)} in the ON clause joining "
+                    f"{join_label}, so the joined table's column is on the left. Epicor files "
+                    "an ON condition under the table on its LEFT-hand side; filed under an "
+                    "earlier joined table it is evaluated before this join is in scope and the "
+                    "statement fails at execution. Same condition, same rows — inner or outer "
+                    "join.",
+                    evidence=_JOIN_ON_EVIDENCE,
+                    before=on_before,
+                    after="; ".join(_sql(b) for _, b in swaps)[:300],
+                )
+            )
+        if moves:
+            tx.append(
+                Transformation(
+                    rule="join_on_third_table",
+                    message=f"Moved {'; '.join(f'`{_sql(c)}`' for c in moves)} from the ON "
+                    f"clause joining {join_label} into WHERE. Epicor files an ON condition "
+                    "under the table on its LEFT-hand side; filed under an earlier joined table "
+                    "it is evaluated before this join is in scope and the statement fails at "
+                    "execution. For an INNER join the WHERE form filters exactly the same rows.",
+                    evidence=_JOIN_ON_EVIDENCE,
+                    before=on_before,
+                    after=" AND ".join(_sql(c) for c in moves)[:300],
+                )
+            )
+        join.set("on", exp.and_(*[c.copy() for c in keep]))
+        if moves:
+            moved.setdefault(id(select), (select, []))[1].extend(c.copy() for c in moves)
+    for select, conds in moved.values():
+        select.where(exp.and_(*conds), copy=False)
+
+
+# --------------------------------------------------------------------------- #
+# Sort keys Epicor cannot store (called by the pipe AFTER ParseFromSQL)
+# --------------------------------------------------------------------------- #
+
+#: Measured: an ORDER BY term is stored in ``QuerySortBy.FieldName``
+#: as Epicor re-renders it. 125 characters runs; 126 fails at Execute with *"An
+#: object or column name is missing or empty…"* — stepped 122..134 on one
+#: expression, and reproduced with and without CASE. Only the pipe can apply it:
+#: the length is of EPICOR'S rendering, which this module cannot predict.
+SORT_KEY_MAX_CHARS = 125
+
+_SORT_WRAP_EVIDENCE = (
+    "measured: a sort key Epicor renders at 126+ characters fails at Execute (`An "
+    "object or column name is missing or empty`) while 125 runs, CASE or no CASE. The "
+    "CTE form, sorting on a named column, returned exactly the independently computed "
+    "ranking, and ran with a GROUP BY and after an existing CTE"
+)
+
+
+@dataclass(frozen=True)
+class SortWrap:
+    """:func:`wrap_sort_in_cte`'s answer: a statement, or the reason there is none."""
+
+    sql: str | None
+    transformation: Transformation | None = None
+    why_not: str = ""
+
+
+def wrap_sort_in_cte(sql: str) -> SortWrap:
+    """Move every ORDER BY term into a CTE column and sort on the column.
+
+    ``select top N <items> from … order by <long expr> desc`` becomes
+    ``with [SortWrap] as (select <items>, <long expr> as [SortKey1] from …)
+    select top N [SortWrap].[<item>] as [<item>] … from [SortWrap] order by
+    [SortWrap].[SortKey1] desc``. The CTE (not a derived table) is deliberate:
+    Epicor honours a ``top`` over a CTE and ignores one over a
+    derived table. The ``Ordered`` nodes are COPIED and only their target is
+    swapped, never rebuilt (a fresh ``Ordered(desc=False)`` emits a NULLS CASE
+    Epicor rejects).
+
+    Declines — ``sql=None`` plus ``why_not`` — whenever the rewrite would have
+    to guess: a set operation, ``select distinct``, OFFSET/FETCH paging, an
+    unnamed or duplicated output column, or a star.
+    """
+    try:
+        root = sqlglot.parse_one(sql, read=DIALECT)
+    except Exception as exc:  # noqa: BLE001
+        return SortWrap(None, why_not=f"the statement could not be re-parsed ({exc})")
+    if not isinstance(root, exp.Select):
+        return SortWrap(None, why_not="it is a set operation (UNION/INTERSECT/EXCEPT)")
+    order = root.args.get("order")
+    if order is None or not order.expressions:
+        return SortWrap(None, why_not="the long sort key is not in the outer ORDER BY")
+    if root.args.get("distinct") is not None:
+        return SortWrap(None, why_not="it is a `select distinct`")
+    if root.args.get("offset") is not None:
+        return SortWrap(None, why_not="it pages with OFFSET/FETCH")
+    if any(_is_star_item(e) for e in root.expressions):
+        return SortWrap(None, why_not="it selects `*`")
+    names = _select_output_names(root)
+    if not names:
+        return SortWrap(None, why_not="an output column has no name — give each item `as [Name]`")
+    if len({n.lower() for n in names}) != len(names):
+        return SortWrap(None, why_not="two output columns share a name")
+
+    taken = {n.lower() for n in names}
+    with_node = root.args.get(_WITH_KEY)
+    ctes = list(with_node.expressions) if isinstance(with_node, exp.With) else []
+    used = {c.alias_or_name.lower() for c in ctes} | {
+        (t.alias_or_name or "").lower() for t in root.find_all(exp.Table)
+    } | {(s.alias or "").lower() for s in root.find_all(exp.Subquery)}
+    cte_name = next(
+        n for n in (f"SortWrap{i or ''}" for i in range(100)) if n.lower() not in used
+    )
+    # A sort expression that IS a projected item sorts on that column; only the
+    # rest get a hidden [SortKeyN]. `==` on sqlglot nodes is structural.
+    projected = {
+        id(o): n
+        for o in order.expressions
+        for item, n in zip(root.expressions, names)
+        if (item.this if isinstance(item, exp.Alias) else item) == o.this
+    }
+    keys: list[str] = []
+    hidden: list[tuple[exp.Expression, str]] = []
+    i = 1
+    for o in order.expressions:
+        if id(o) in projected:
+            keys.append(projected[id(o)])
+            continue
+        while f"sortkey{i}" in taken:
+            i += 1
+        keys.append(f"SortKey{i}")
+        hidden.append((o.this, f"SortKey{i}"))
+        taken.add(f"sortkey{i}")
+
+    inner = root.copy()
+    inner.set(_WITH_KEY, None)
+    inner.set("order", None)
+    inner.set("limit", None)
+    inner.set(
+        "expressions",
+        [
+            *inner.expressions,
+            *(exp.alias_(e.copy(), k, quoted=True) for e, k in hidden),
+        ],
+    )
+    cte_ident = exp.to_identifier(cte_name, quoted=True)
+    outer = exp.Select(
+        expressions=[
+            exp.alias_(exp.column(exp.to_identifier(n, quoted=True), table=cte_ident.copy()),
+                       n, quoted=True)
+            for n in names
+        ]
+    ).from_(exp.Table(this=cte_ident.copy()))
+    limit = root.args.get("limit")
+    if limit is not None:
+        outer.set("limit", limit.copy())
+    new_keys = []
+    for o, k in zip(order.expressions, keys):
+        key = o.copy()
+        key.set("this", exp.column(exp.to_identifier(k, quoted=True), table=cte_ident.copy()))
+        new_keys.append(key)
+    outer.set("order", exp.Order(expressions=new_keys))
+    outer.set(
+        _WITH_KEY,
+        exp.With(
+            expressions=[
+                *(c.copy() for c in ctes),
+                exp.CTE(this=inner, alias=exp.TableAlias(this=cte_ident.copy())),
+            ]
+        ),
+    )
+    out = _sql(outer)
+    try:
+        _guard_generator_artifacts(sql, out)
+    except _Refusal:
+        return SortWrap(None, why_not="the rewrite could not be emitted safely")
+    if not re.search(r"(?<![\w.])with(?![\w])", out, re.I):
+        return SortWrap(None, why_not="the rewrite lost its CTE")
+    return SortWrap(
+        out,
+        Transformation(
+            rule="sort_key_wrapped",
+            message="The ORDER BY expression is longer than Epicor can store as a sort key "
+            f"(max {SORT_KEY_MAX_CHARS} characters as Epicor renders it), so the statement "
+            f"was re-written as a CTE [{cte_name}] that computes it as a named column, and "
+            f"the outer select sorts on {', '.join(f'[{k}]' for k in keys)}. The rows and "
+            "their order are the same"
+            + ("; the helper column is not returned." if hidden else "."),
+            evidence=_SORT_WRAP_EVIDENCE,
+            before=_sql(order)[:300],
+            after=_sql(outer.args["order"])[:300],
+        ),
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Entry point
 # --------------------------------------------------------------------------- #
@@ -1760,6 +2211,7 @@ def transpile(
         # UD mirror joins run FIRST among the rewrites, so every later pass —
         # alias sorts, the row bound, the advisories — sees the final FROM set.
         _pass_ud_mirror_joins(root, ud_mirrors, ud_catalogue, tx)
+        _pass_join_on_third_table(root, tx)
         _pass_distinct_with_bound(root)
         _pass_ordinals(root, tx)
         root = _pass_setop_order(root, tx, policy, advisories)

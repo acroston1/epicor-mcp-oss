@@ -244,3 +244,83 @@ def test_the_concurrency_cap_is_a_real_semaphore():
         return peak
 
     assert asyncio.run(scenario()) <= 2
+
+
+# --------------------------------------------------------------------------- #
+# Joins THROUGH a CTE / derived table
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("fixture", ["gov_joined_through_cte", "gov_joined_through_derived"])
+def test_tables_joined_only_through_a_cte_or_derived_table_are_not_a_cross_join(fixture):
+    """Epicor files a CTE / derived-table reference as its own QueryTable row
+    (`TableType == 'SQ'`) and points the QueryRelation rows AT it. With DB
+    tables as the only graph nodes every one of those edges was dropped, so
+    `Part ⋈ oh`, `PartCost ⋈ oh`, `PartPlant ⋈ oh` — each keyed on Company AND
+    PartNum — were refused as a cross join. Real parse output for both shapes."""
+    _, ds = load(fixture)
+    assert {t["TableType"] for t in ds["QueryTable"]} >= {"DB", "SQ"}
+    assert check_cost(ds) is None
+
+
+def test_a_real_cartesian_next_to_a_cte_is_still_refused():
+    """The control: connectivity now runs over the SQ node too, and the
+    `cross join Erp.Customer` still lands in its own group."""
+    _, ds = load("gov_cartesian_beside_cte")
+    env = check_cost(ds)
+    assert env is not None
+    assert env["error"] == "query_too_expensive"
+    assert "Erp.Customer" in env["detail"]["tables"]
+    # Only DB tables are named in the groups; the CTE node never is.
+    assert sorted(map(sorted, env["detail"]["unjoined_groups"])) == [["C"], ["P"]]
+
+
+def test_two_db_tables_bridged_only_by_an_sq_node_are_one_group():
+    """Minimal hand shape of the same rule: A - [cte] - B is connected."""
+    ds = {
+        "QueryTable": [
+            {"SubQueryID": "s", "TableID": "A", "TableType": "DB",
+             "DBSchemaName": "Erp", "DBTableName": "Part"},
+            {"SubQueryID": "s", "TableID": "q", "TableType": "SQ", "DBTableName": "sub-2"},
+            {"SubQueryID": "s", "TableID": "B", "TableType": "DB",
+             "DBSchemaName": "Erp", "DBTableName": "Customer"},
+        ],
+        "QueryRelation": [
+            {"RelationID": "r1", "SubQueryID": "s", "ParentTableID": "q", "ChildTableID": "A"},
+            {"RelationID": "r2", "SubQueryID": "s", "ParentTableID": "q", "ChildTableID": "B"},
+        ],
+        "QueryRelationField": [
+            {"RelationID": "r1", "ParentFieldName": "Company", "ChildFieldName": "Company"},
+            {"RelationID": "r1", "ParentFieldName": "PartNum", "ChildFieldName": "PartNum"},
+            {"RelationID": "r2", "ParentFieldName": "Company", "ChildFieldName": "Company"},
+            {"RelationID": "r2", "ParentFieldName": "CustNum", "ChildFieldName": "CustNum"},
+        ],
+    }
+    assert check_cost(ds) is None
+    # ...and cutting one bridge edge splits them again.
+    ds["QueryRelation"] = ds["QueryRelation"][:1]
+    env = check_cost(ds)
+    assert env is not None and env["error"] == "query_too_expensive"
+    assert sorted(map(sorted, env["detail"]["unjoined_groups"])) == [["A"], ["B"]]
+
+
+def test_a_company_only_join_to_a_cte_is_still_rule_3():
+    """Routing through an SQ node must not launder a cartesian: a Company-only
+    relation to the CTE is still refused, whatever the node type."""
+    ds = {
+        "QueryTable": [
+            {"SubQueryID": "s", "TableID": "q", "TableType": "SQ", "DBTableName": "sub-2"},
+            {"SubQueryID": "s", "TableID": "A", "TableType": "DB",
+             "DBSchemaName": "Erp", "DBTableName": "Part"},
+        ],
+        "QueryRelation": [
+            {"RelationID": "r1", "SubQueryID": "s", "ParentTableID": "q", "ChildTableID": "A"},
+        ],
+        "QueryRelationField": [
+            {"RelationID": "r1", "ParentFieldName": "Company", "ChildFieldName": "Company"},
+        ],
+    }
+    env = check_cost(ds)
+    assert env is not None
+    assert env["error"] == "query_too_expensive"
+    assert "ONLY Company" in env["message"]

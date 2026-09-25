@@ -1,0 +1,89 @@
+{
+ "sql": "select top 5 [PC].[PartNum] as [PartNum] from Erp.PartCost as [PC] order by [PC].[StdMaterialCost]+[PC].[StdLaborCost]+[PC].[StdBurdenCost]+[PC].[StdSubContCost]+[PC].[StdMtlBurCost]+[PC].[AvgMaterialCost]+[PC].[AvgLaborCost]+[PC].[AvgBurdenCost] desc",
+ "ds": {
+  "QuerySubQuery": [
+   {
+    "IsUnion": false,
+    "LeftP": "",
+    "Name": "Main",
+    "OrderByFetch": "",
+    "OrderByOffSet": "",
+    "RightP": "",
+    "SelectListClause": "Top",
+    "Seq": 1,
+    "SubQueryID": "6749a3f4-0dda-5461-bcd3-45a41ff57bde",
+    "TopInPercent": false,
+    "TopRowExpr": 5.0,
+    "TopWithTies": false,
+    "Type": "TopLevel"
+   }
+  ],
+  "QueryTable": [
+   {
+    "DBSchemaName": "Erp",
+    "DBTableName": "PartCost",
+    "IsSummaryTable": false,
+    "IsVisibleInDesigner": true,
+    "Modifiers": "",
+    "Options": null,
+    "PivotDataType": "",
+    "PivotFieldFormat": "",
+    "PivotFunction": "",
+    "Seq": 2,
+    "SubQueryID": "6749a3f4-0dda-5461-bcd3-45a41ff57bde",
+    "SystemFlag": false,
+    "TableID": "PC",
+    "TableType": "DB"
+   }
+  ],
+  "QueryField": [
+   {
+    "Aggregation": "",
+    "Alias": "PartNum",
+    "DBFieldName": "PartNum",
+    "DBSchemaName": "Erp",
+    "DBTableName": "PartCost",
+    "DataType": "nvarchar",
+    "DefaultValue": "",
+    "Description": "A unique part number that identifies this part. ",
+    "DropDown": false,
+    "External": false,
+    "FieldFormat": "x(50)",
+    "FieldLabel": "Part",
+    "FieldName": "PartNum",
+    "Formula": "",
+    "IsCalculated": false,
+    "IsGroupBy": false,
+    "IsReadOnly": false,
+    "IsRequired": false,
+    "LikeDataFieldName": "PartNum",
+    "LikeDataFieldSeq": 0,
+    "LikeDataFieldTableID": "Part",
+    "QuickSearchID": "",
+    "RaiseEvent": false,
+    "Seq": 1,
+    "SubQueryID": "6749a3f4-0dda-5461-bcd3-45a41ff57bde",
+    "SubquerySet_Alias": "",
+    "SubquerySet_DataType": "",
+    "SystemFlag": false,
+    "TableID": "PC",
+    "UpdInitExpression": "",
+    "Updatable": false,
+    "UseLike": true
+   }
+  ],
+  "QuerySortBy": [
+   {
+    "FieldName": "(((((((PC.StdMaterialCost + PC.StdLaborCost) + PC.StdBurdenCost) + PC.StdSubContCost) + PC.StdMtlBurCost) + PC.AvgMaterialCost) + PC.AvgLaborCost) + PC.AvgBurdenCost)",
+    "IsAsc": false,
+    "Seq": 1,
+    "SubQueryID": "6749a3f4-0dda-5461-bcd3-45a41ff57bde",
+    "TableID": ""
+   }
+  ],
+  "QueryWhereItem": [],
+  "QueryRelation": [],
+  "QueryRelationField": [],
+  "QueryGroupBy": []
+ }
+}
