@@ -727,7 +727,7 @@ def _rule_duplicate_projection(scope: _Scope) -> list[GrainFinding]:
                 f"projection, but joining it multiplies the {_named(scope, sorted(projected))} "
                 "rows — so the SAME row comes back once per match and the row count is not a "
                 "count of anything. If the join is only there to filter, add `distinct` (or move "
-                "it into a `where ... in (select ...)`); if you meant the detail, project a "
+                "it into a joined CTE of distinct keys); if you meant the detail, project a "
                 f"column from {_named(scope, invisible)} so the rows are distinguishable."
             ),
             evidence=_EV_DUP,

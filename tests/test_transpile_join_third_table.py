@@ -279,7 +279,17 @@ def test_shapes_it_cannot_read_with_certainty_are_left_alone():
         r = tp(sql)
         assert not {"join_on_sides_swapped", "join_on_third_table",
                     "join_on_parent_reordered"} & set(r.rules), sql
-        assert r.outcome is not Outcome.REFUSED
+        if sql is subquery:
+            # Measured: an IN-subquery in a JOIN ON clause ERRORS at run time in
+            # Epicor (measured, correlated and uncorrelated) and cannot be rewritten
+            # safely, so `_pass_in_subquery` refuses it up front (sql/CLAUDE.md,
+            # "x in (select …) NEVER COMPARES THE VALUE"). This test's intent — the
+            # join-on-third-table pass leaves the shape alone — is the rules check
+            # above; the refusal comes from the IN-subquery pass, not a join rule.
+            assert r.outcome is Outcome.REFUSED, sql
+            assert (r.error or {}).get("error") == "sql_in_subquery_unsupported", r.error
+        else:
+            assert r.outcome is not Outcome.REFUSED, sql
 
 
 def test_every_join_in_the_statement_is_repaired_in_one_pass():

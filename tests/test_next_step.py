@@ -104,6 +104,71 @@ class TestDiagnosis:
         assert "Do not re-run" in text
 
 
+    def test_an_exact_text_match_the_diagnosis_never_proved_absent_says_CHECK_ONCE(self):
+        """"found no SQL mistake … Do not re-run" was emitted for
+        `[V].[Name] = 'Acme Tooling'` — a column the diagnosis only SAMPLED —
+        while the real record is ACME TOOLING INC. The string may not claim
+        more than the diagnosis measured."""
+        killer = {
+            "predicate": "[V].[Name] = 'Acme Tooling'",
+            "compared_to": "Acme Tooling",
+            "comparison": "eq",
+            "likely_mistake": False,
+            "domain": {"values": ["X"], "complete": False},
+        }
+        text = next_step_for(
+            _diag(likely_mistake=False, verdict="killing_predicate", killing_predicates=[killer])
+        )
+        assert text.startswith("CHECK ONCE, THEN REPORT")
+        assert "upper([V].[Name]) like" in text
+        assert "Do not re-run" not in text
+
+        # Never enumerated at all (a big transaction table) is the same case.
+        no_domain = {**killer, "domain": None}
+        assert next_step_for(
+            _diag(likely_mistake=False, verdict="killing_predicate",
+                  killing_predicates=[no_domain])
+        ).startswith("CHECK ONCE")
+
+    def test_a_text_id_with_a_look_alike_table_hint_keeps_the_hint_as_the_lead(self):
+        """A missing AP invoice id whose diagnosis already names the AR look-alike
+        table: the sibling hint is the lead, not a LIKE on the wrong table."""
+        killer = {
+            "predicate": "[H].[InvoiceNum] = 'INV-10001'",
+            "compared_to": "INV-10001",
+            "comparison": "eq",
+            "likely_mistake": False,
+            "sibling_hint": "An A/R invoice lives on Erp.InvcHead.",
+        }
+        text = next_step_for(
+            _diag(likely_mistake=False, verdict="killing_predicate", killing_predicates=[killer])
+        )
+        assert text.startswith("REPORT THIS AS THE ANSWER")
+
+    def test_a_proven_absence_still_says_REPORT(self):
+        """A COMPLETE enumeration, or a number outside a measured range, IS proof."""
+        for killer in (
+            {"predicate": "[J].[Plant] = '70'", "compared_to": "70", "comparison": "eq",
+             "likely_mistake": False, "domain": {"values": ["10"], "complete": True}},
+            {"predicate": "[C].[Name] = 'X'", "compared_to": "X", "comparison": "eq",
+             "likely_mistake": False, "domain": {"values": ["Y"], "complete": True}},
+            {"predicate": "[PH].[PONum] = 99999999", "compared_to": "99999999",
+             "comparison": "eq", "likely_mistake": False,
+             "domain": {"min": "2418", "max": "585401", "complete": True}},
+            {"predicate": "[D].[Date] >= '2099-01-01'", "compared_to": "2099-01-01",
+             "comparison": "cmp", "likely_mistake": False},
+        ):
+            text = next_step_for(
+                _diag(likely_mistake=False, verdict="killing_predicate",
+                      killing_predicates=[killer])
+            )
+            assert text.startswith("REPORT THIS AS THE ANSWER"), killer
+
+    def test_an_undetermined_cause_is_reported_as_unconfirmed_not_as_a_fact(self):
+        text = next_step_for(_diag(likely_mistake=False, verdict="undetermined"))
+        assert "UNCONFIRMED" in text and "RE-RUN" not in text
+
+
 # --------------------------------------------------------------------------- #
 # 2. Grain
 # --------------------------------------------------------------------------- #

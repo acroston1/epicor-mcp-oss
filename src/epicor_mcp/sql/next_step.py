@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from epicor_mcp.sql.diagnose_empty import unverified_text_match
+
 __all__ = ["next_step_for", "annotate_next_step"]
 
 # The sanctioned de-duplication form, quoted here because the grain note says
@@ -77,10 +79,35 @@ def next_step_for(result: Mapping[str, Any]) -> str:
                 "probably wrong, not the data empty. Correct the predicate named in "
                 "`diagnosis.message` and call epicor_query again."
             )
+        # WHAT WAS MEASURED DECIDES THE WORDING. A blanket "found no SQL mistake …
+        # Do not re-run" was emitted even where the diagnosis itself proved
+        # nothing: an exact text match against a column it only SAMPLED (or never
+        # listed), and a verdict whose cause was "not established". A weak model
+        # obeyed it and reported "no POs for Acme" when the vendor is ACME TOOLING
+        # INC. The string may not claim more than `diagnosis` did.
+        killers = diagnosis.get("killing_predicates") or []
+        inexact = [k for k in killers if isinstance(k, Mapping) and unverified_text_match(k)]
+        if inexact:
+            pred = str(inexact[0].get("predicate") or "")
+            lhs = pred.split("=")[0].strip() if "=" in pred else "the column"
+            return (
+                "CHECK ONCE, THEN REPORT. 0 rows is plausible, but "
+                f"`{pred}` was only tested as an EXACT match and the column's values "
+                "were not fully listed, so a differently spelled record is not ruled out. "
+                "If that value came from the user's own words (a name, description or "
+                f"partial id), re-run once with `upper({lhs}) like '%<KEY WORD>%'`; if "
+                "that is also empty, report 0 rows."
+            )
+        if diagnosis.get("verdict") == "undetermined":
+            return (
+                "REPORT 0 rows, but as UNCONFIRMED: `diagnosis` could not establish the "
+                "cause (some predicates were not checked). Say which filters were applied "
+                "rather than stating that no such records exist."
+            )
         return (
-            "REPORT THIS AS THE ANSWER. 0 rows, and `diagnosis` found no SQL mistake — "
-            "a value that does not exist is a real result. Do not re-run the same "
-            "question a different way."
+            "REPORT THIS AS THE ANSWER. 0 rows, and `diagnosis` measured why — a value "
+            "that does not exist is a real result. Do not re-run the same question a "
+            "different way."
         )
 
     warns = [n for n in (result.get("notes") or []) if isinstance(n, Mapping) and _is_warn(n)]

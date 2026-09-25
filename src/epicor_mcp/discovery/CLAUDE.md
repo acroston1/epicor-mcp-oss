@@ -17,6 +17,15 @@ Invariants:
 - Semantic ranking runs only when `vector_search_enabled` is on AND the configured
   provider, model and dimension match the build. Every other case ranks by
   substring, reports `search_mode: "substring"` and says why under `notes`.
+- A comma/semicolon/newline `query` is ranked PER TERM (`rank.split_terms` ->
+  `DiscoveryIndex.search_fields_terms`, merged round-robin, `limit` raised to one
+  slot per term) in BOTH modes: semantic uses `fuse(per_term=True)`, substring uses
+  `_lex_term_fields`. Both add `term_name_match`, an exact-name bonus and the
+  `LOCALE_PREFIXES` penalty. A query with no separator takes the original path
+  byte-for-byte (pinned); a slash is NOT a separator (`site/plant` is one term).
+- Field entries are compact: `name`, `type`, `label`, plus `description` only when
+  it says more than the label (cut at 100 chars). No per-field `primary_key` or
+  `required`. `also_named_on_other_tables` fires only for terms nothing served answers.
 - Runtime model loads are local-files-only; only the build script may download.
 - Server-injected authorization applies to primary results, UD mirrors and
   cross-table suggestions. Table/column denial callbacks fail closed.

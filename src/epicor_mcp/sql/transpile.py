@@ -551,7 +551,10 @@ def _pass_shape_refusals(root: exp.Expression, masked: str, policy: Policy) -> N
                 "five forms tested",
                 valid={
                     "alternatives": [
-                        "where [A].[Key] in (select [B].[Key] from Erp.B as [B] where …)",
+                        "where [A].[Key] in (select [B].[Key] from Erp.B as [B] "
+                        "where [B].[Key] = [A].[Key] and …)   -- EXISTS; the key "
+                        "equality inside is REQUIRED",
+                        _IN_SUBQUERY_SHAPE + "   -- EXISTS, as a join",
                         "left outer join Erp.B as [B] on … where [B].[Key] is null   -- NOT EXISTS",
                     ]
                 },
@@ -695,6 +698,317 @@ def _pass_shape_refusals(root: exp.Expression, masked: str, policy: Policy) -> N
                             valid={"replacement": "select top 100 …"},
                         )
                     )
+
+
+_IN_SUBQUERY_EVIDENCE = (
+    "measured: Epicor evaluates `x in (<subquery>)` as 'the subquery returned any row' and "
+    "never compares the value. Against a live tenant an uncorrelated `PONum in (select PONum "
+    "from PORel where OpenRelease = 1)` over open POs returned EVERY open PO, roughly twice "
+    "the distinct-key CTE join's count; `not in` returned 0, and the CTE semi-join plus the "
+    "left-join anti-join summed exactly to the open-PO total. An IN whose subquery matched a "
+    "single vendor returned every PO in the table against a true 0"
+)
+
+_IN_SUBQUERY_SHAPE = (
+    "with [Keys] as (select distinct [B].[Company] as [Company], [B].[Key] as [Key] "
+    "from Erp.B as [B] where …) select … from Erp.A as [A] inner join [Keys] "
+    "on [Keys].[Company] = [A].[Company] and [Keys].[Key] = [A].[Key]"
+)
+
+
+def _in_subquery_refusal(reason: str, node: exp.Expression) -> _Refusal:
+    return _Refusal(
+        _envelope(
+            "sql_in_subquery_unsupported",
+            "`x in (select …)` is SILENTLY WRONG in Epicor: it never compares the value, it "
+            "only asks whether the subquery returned ANY row — so it keeps every row or none. "
+            f"This one could not be rewritten automatically ({reason}). Write the semi-join as "
+            "a CTE of distinct keys and INNER JOIN it (for NOT IN: LEFT OUTER JOIN it and add "
+            "`[Keys].[Key] is null` to the WHERE).",
+            evidence=_IN_SUBQUERY_EVIDENCE,
+            valid={
+                "alternatives": [
+                    _IN_SUBQUERY_SHAPE,
+                    "a literal list is fine: [A].[Key] in (1, 2, 3)",
+                    "a single value is fine: [A].[Key] = (select top 1 [B].[Key] from …)",
+                ]
+            },
+            detail={"predicate": _sql(node), "why_not_rewritten": reason},
+        )
+    )
+
+
+def _conjuncts(node: exp.Expression) -> list[exp.Expression]:
+    """Flatten a WHERE body into its top-level AND terms (through parentheses)."""
+    if isinstance(node, exp.And):
+        return _conjuncts(node.this) + _conjuncts(node.expression)
+    if isinstance(node, exp.Paren) and isinstance(node.this, exp.And):
+        return _conjuncts(node.this)
+    return [node]
+
+
+def _semi_join_target(root: exp.Expression, node: exp.In) -> tuple[exp.Select | None, str]:
+    """The select whose WHERE this IN may be lifted out of, or ``(None, why not)``."""
+    pred: exp.Expression = node.parent if isinstance(node.parent, exp.Not) else node
+    cur = pred.parent
+    while isinstance(cur, (exp.And, exp.Paren)):
+        cur = cur.parent
+    if not isinstance(cur, exp.Where):
+        return None, (
+            "it is not an AND-ed term of a WHERE clause (it sits under OR / NOT / CASE, or "
+            "in ON / HAVING / the select list)"
+        )
+    sel = cur.parent
+    if not isinstance(sel, exp.Select):
+        return None, "its WHERE does not belong to a plain select"
+    with_node = root.args.get(_WITH_KEY)
+    cte_bodies = (
+        [c.this for c in with_node.expressions] if isinstance(with_node, exp.With) else []
+    )
+    if sel is not root and not any(sel is b for b in cte_bodies):
+        return None, (
+            "it is inside a derived table, a set-operation branch or another subquery, not "
+            "the outer select or a CTE body"
+        )
+    return sel, ""
+
+
+def _key_correlated_in_where(node: exp.In) -> bool:
+    """True for the ONE `in (select …)` shape Epicor answers correctly.
+
+    Epicor evaluates the IN as *"the subquery returned any row"*. When the
+    subquery's own WHERE equates its projected column to the outer column, that
+    IS the correct per-row answer. Measured: `[PH].[VendorNum] in (select
+    [AP].[VendorNum] … where [AP].[VendorNum] = [PH].[VendorNum] and …)` matched
+    the CTE join exactly, and it plus its NOT IN summed to the whole table.
+    Correlated on Company ONLY it is wrong again (every row), so the equality must
+    be on the projected column itself. In an ON clause the same statement errors
+    at run time, so only a WHERE qualifies.
+    """
+    outer = node.this
+    sub = node.args.get("query")
+    inner = sub.this if isinstance(sub, exp.Subquery) else sub
+    if not (isinstance(outer, exp.Column) and outer.table and isinstance(inner, exp.Select)):
+        return False
+    if len(inner.expressions) != 1:
+        return False
+    proj = inner.expressions[0]
+    key = proj.this if isinstance(proj, exp.Alias) else proj
+    if not (isinstance(key, exp.Column) and key.table):
+        return False
+    cur = node.parent
+    while cur is not None and not isinstance(cur, (exp.Where, exp.Join, exp.Having, exp.Select)):
+        cur = cur.parent
+    if not isinstance(cur, exp.Where):
+        return False
+
+    def same(a: exp.Expression, b: exp.Column) -> bool:
+        return (
+            isinstance(a, exp.Column)
+            and (a.table or "").lower() == b.table.lower()
+            and a.name.lower() == b.name.lower()
+        )
+
+    where = inner.args.get("where")
+    if where is None:
+        return False
+    for term in _conjuncts(where.this):
+        if isinstance(term, exp.EQ) and (
+            (same(term.this, key) and same(term.expression, outer))
+            or (same(term.this, outer) and same(term.expression, key))
+        ):
+            return True
+    return False
+
+
+def _pass_in_subquery(root: exp.Expression, tx: list[Transformation]) -> None:
+    """`x [not] in (select …)` → a CTE of distinct keys, joined.
+
+    Measured: Epicor's BAQ engine treats ``x in (<subquery>)`` as *"the subquery
+    returned any row"* — the value is never compared. It parses, it runs, the
+    subquery's own WHERE is honoured, and the answer is every outer row
+    (non-empty subquery) or none (empty one). ``not in`` is the mirror image.
+
+    Known answer: the CTE semi-join and the left-join anti-join partition the
+    outer set exactly, and the semi-join matches a third, independently written
+    statement (a distinct-key count over a plain join).
+
+    Rewritten ONLY when the shape is mechanical: an AND-ed WHERE term of the
+    outer select or a CTE body, a qualified column on the left, and an
+    uncorrelated single-select subquery projecting one qualified, non-aggregate
+    column with no top / order. Anything else is REFUSED — never left to run.
+    """
+    if not any(
+        n.args.get("query") is not None and not _key_correlated_in_where(n)
+        for n in root.find_all(exp.In)
+    ):
+        return
+
+    taken = {
+        (t.alias_or_name or "").lower() for t in root.find_all(exp.Table)
+    } | {(c.alias or "").lower() for c in root.find_all(exp.CTE)}
+    serial = 0
+
+    while True:
+        pending = [
+            n for n in root.find_all(exp.In)
+            if n.args.get("query") is not None and not _key_correlated_in_where(n)
+        ]
+        if not pending:
+            return
+        node = sel = None
+        why = ""
+        for cand in pending:
+            s, reason = _semi_join_target(root, cand)
+            if s is not None:
+                node, sel = cand, s
+                break
+            why = why or reason
+        if node is None:
+            raise _in_subquery_refusal(why, pending[0])
+
+        outer = node.this
+        if not (isinstance(outer, exp.Column) and outer.table):
+            raise _in_subquery_refusal(
+                "the left-hand side is not a table-qualified column", node
+            )
+        sub = node.args["query"]
+        inner = sub.this if isinstance(sub, exp.Subquery) else sub
+        if not isinstance(inner, exp.Select):
+            raise _in_subquery_refusal("the subquery is a set operation", node)
+        if any(inner.args.get(k) is not None for k in ("limit", "order", _WITH_KEY)):
+            raise _in_subquery_refusal("the subquery carries its own top / order by / with", node)
+        if len(inner.expressions) != 1:
+            raise _in_subquery_refusal("the subquery must project exactly one column", node)
+        proj = inner.expressions[0]
+        key = proj.this if isinstance(proj, exp.Alias) else proj
+        if not (isinstance(key, exp.Column) and key.table) or _is_agg(proj):
+            raise _in_subquery_refusal(
+                "the subquery must project one table-qualified, non-aggregate column", node
+            )
+        inner_aliases = {(t.alias_or_name or "").lower() for t in inner.find_all(exp.Table)}
+        inner_aliases |= {(s.alias or "").lower() for s in inner.find_all(exp.Subquery) if s.alias}
+        for col in inner.find_all(exp.Column):
+            if isinstance(col.this, exp.Star):
+                continue
+            if not col.table:
+                raise _in_subquery_refusal(
+                    f"`{_sql(col)}` inside the subquery is unqualified, so it cannot be "
+                    "proven uncorrelated",
+                    node,
+                )
+            if col.table.lower() not in inner_aliases:
+                raise _in_subquery_refusal(
+                    f"the subquery is correlated (`{_sql(col)}` refers to the outer query) "
+                    "but not on the projected column itself — correlate it as "
+                    f"`{_sql(key)} = {_sql(outer)}` or use a CTE join",
+                    node,
+                )
+
+        def _erp_table(scope: exp.Select, alias: str) -> bool:
+            for t in scope.find_all(exp.Table):
+                if (t.alias_or_name or "").lower() == alias.lower():
+                    return (t.db or "").lower() == "erp"
+            return False
+
+        with_company = _erp_table(inner, key.table) and _erp_table(sel, outer.table)
+
+        serial += 1
+        name = f"InKeys{serial}"
+        while name.lower() in taken:
+            serial += 1
+            name = f"InKeys{serial}"
+        taken.add(name.lower())
+        key_name = key.name if key.name.lower() != "company" else "InKey"
+
+        body = inner.copy()
+        cols: list[exp.Expression] = []
+        if with_company:
+            company = exp.column("Company", table=key.table, quoted=True)
+            cols.append(exp.alias_(company, "Company", quoted=True))
+            group = body.args.get("group")
+            if group is not None and not any(
+                isinstance(g, exp.Column) and g.name.lower() == "company"
+                and (g.table or "").lower() == key.table.lower()
+                for g in group.expressions
+            ):
+                group.append("expressions", company.copy())
+        cols.append(exp.alias_(key.copy(), key_name, quoted=True))
+        body.set("expressions", cols)
+        if body.args.get("group") is None:
+            body.set("distinct", exp.Distinct())
+
+        cte_ref = lambda c: exp.column(c, table=name, quoted=True)  # noqa: E731
+        on = exp.EQ(this=cte_ref(key_name), expression=outer.copy())
+        if with_company:
+            on = exp.and_(
+                exp.EQ(
+                    this=cte_ref("Company"),
+                    expression=exp.column("Company", table=outer.table, quoted=True),
+                ),
+                on,
+            )
+        negated = isinstance(node.parent, exp.Not)
+        join = exp.Join(
+            this=exp.Table(this=exp.to_identifier(name, quoted=True)),
+            on=on,
+            side="LEFT" if negated else None,
+            kind="OUTER" if negated else None,
+        )
+        if not negated:
+            join.set("kind", "INNER")
+
+        pred = node.parent if negated else node
+        where = sel.args["where"]
+        terms = [t for t in _conjuncts(where.this) if t is not pred]
+        if negated:
+            terms.append(exp.Is(this=cte_ref(key_name), expression=exp.Null()))
+        before = _sql(pred)
+        if terms:
+            new_where = terms[0]
+            for t in terms[1:]:
+                new_where = exp.and_(new_where, t)
+            where.set("this", new_where)
+        else:
+            sel.set("where", None)
+        sel.append("joins", join)
+
+        with_node = root.args.get(_WITH_KEY)
+        cte = exp.CTE(this=body, alias=exp.TableAlias(this=exp.to_identifier(name, quoted=True)))
+        if isinstance(with_node, exp.With):
+            # A CTE may only reference CTEs defined BEFORE it, so the new one
+            # goes directly ahead of the CTE whose body it serves (nested INs).
+            ctes = list(with_node.expressions)
+            at = next((i for i, c in enumerate(ctes) if c.this is sel), len(ctes))
+            ctes.insert(at, cte)
+            with_node.set("expressions", ctes)
+        else:
+            root.set(_WITH_KEY, exp.With(expressions=[cte]))
+
+        tx.append(
+            Transformation(
+                rule="not_in_subquery_anti_join" if negated else "in_subquery_semi_join",
+                message=(
+                    f"`{before}` rewritten as a CTE [{name}] of distinct keys, "
+                    + (
+                        "LEFT JOINed with `is null` (an anti-join)"
+                        if negated
+                        else "INNER JOINed (a semi-join)"
+                    )
+                    + " — Epicor runs `in (select …)` as 'the subquery returned any row' and "
+                    "never compares the value, which silently keeps every row or none."
+                    + (
+                        " One difference from T-SQL's NOT IN: a NULL on either side is "
+                        "treated as 'no match' (kept), not as 'unknown' (dropped)."
+                        if negated
+                        else ""
+                    )
+                ),
+                evidence=_IN_SUBQUERY_EVIDENCE,
+                before=before,
+                after=f"{join.sql(dialect=DIALECT)}",
+            )
+        )
 
 
 def _pass_distinct_with_bound(root: exp.Expression) -> None:
@@ -2211,6 +2525,9 @@ def transpile(
         # UD mirror joins run FIRST among the rewrites, so every later pass —
         # alias sorts, the row bound, the advisories — sees the final FROM set.
         _pass_ud_mirror_joins(root, ud_mirrors, ud_catalogue, tx)
+        # Before the join passes: the semi-join it adds is a join like any other,
+        # and the ON-clause filing pass must see it.
+        _pass_in_subquery(root, tx)
         _pass_join_on_third_table(root, tx)
         _pass_distinct_with_bound(root)
         _pass_ordinals(root, tx)

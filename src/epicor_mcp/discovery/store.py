@@ -276,8 +276,15 @@ class DiscoveryIndex:
         *,
         limit: int = 15,
         exclude: Iterable[str] = (),
+        per_term: bool = False,
     ) -> list[FieldHit]:
         """Rank one table's columns. *qvec* is the already-embedded query.
+
+        ``per_term`` marks *query* as ONE term of a split multi-concept query
+        (see :meth:`search_fields_terms`): the semantic path switches on the
+        per-term fusion terms in :func:`~epicor_mcp.discovery.rank.fuse`, and the
+        substring path adds the same name-match / exact-name / localisation terms
+        to the substring score (:meth:`_lex_term_fields`).
 
         A ``None`` *qvec* means the embedding server was unreachable; the method
         degrades to the lexical + deterministic terms rather than failing, which
@@ -311,9 +318,12 @@ class DiscoveryIndex:
             # column order (Seq) rather than an arbitrary ranking of noise.
             ordered = [(k, 0.0) for k in keys]
         elif not dense:
-            ordered = lex
+            ordered = self._lex_term_fields(canon, query) if per_term else lex
         else:
-            ordered = _rank.fuse(dense, lex, query, meta, scoped=True, topn=limit + len(skip) + 20)
+            ordered = _rank.fuse(
+                dense, lex, query, meta, scoped=True, topn=limit + len(skip) + 20,
+                per_term=per_term,
+            )
 
         out: list[FieldHit] = []
         by_name = {r["name"]: r for r in rows}
@@ -339,6 +349,43 @@ class DiscoveryIndex:
             )
             if len(out) >= limit:
                 break
+        return out
+
+    def search_fields_terms(
+        self,
+        table: str,
+        terms: Sequence[tuple[str, Any]],
+        *,
+        limit: int = 15,
+        exclude: Iterable[str] = (),
+    ) -> list[FieldHit]:
+        """Rank one table's columns for a query already split into terms.
+
+        *terms* is ``[(term, vector_or_None), …]`` from
+        :func:`~epicor_mcp.discovery.rank.split_terms`. ONE term is exactly
+        :meth:`search_fields` — same call, same output — so a query with no
+        separator is untouched. Several terms are each ranked on their own and
+        merged ROUND-ROBIN in the caller's order: every term's best column first,
+        then every term's second, deduplicated, up to *limit*. One blurred
+        ranking of the whole list lets whichever concept matches strongest take
+        every slot. Works identically with and without vectors.
+        """
+        if len(terms) == 1:
+            term, vec = terms[0]
+            return self.search_fields(table, vec, term, limit=limit, exclude=exclude)
+        per = [
+            self.search_fields(table, vec, term, limit=limit, exclude=exclude, per_term=True)
+            for term, vec in terms
+        ]
+        out: list[FieldHit] = []
+        seen: set[str] = set()
+        for r in range(max((len(p) for p in per), default=0)):
+            for hits in per:
+                if r < len(hits) and hits[r].field not in seen:
+                    seen.add(hits[r].field)
+                    out.append(hits[r])
+                    if len(out) >= limit:
+                        return out
         return out
 
     def search_tables(
@@ -423,6 +470,33 @@ class DiscoveryIndex:
             if score:
                 matches.append((f"{table}.{row['name']}", score))
         return sorted(matches, key=lambda item: (-item[1], item[0].casefold()))[:k]
+
+    def _lex_term_fields(self, table: str, term: str) -> list[tuple[str, float]]:
+        """Substring ranking for ONE term of a multi-concept query.
+
+        The plain substring score cannot see that "invoice number" names
+        ``InvoiceNum`` (no phrase match in a CamelCase name), so the per-term
+        name terms from :mod:`rank` are added on a scale that lets a full name
+        match outrank a phrase that merely occurs in some description, and a
+        localisation-family or plumbing column fall behind its base column.
+        Rows matching neither way are dropped, as on the single-term path.
+        """
+        matches = []
+        for row in self.fields_of(table):
+            field = row["name"]
+            sub = substring_score(term, field, row.get("label", ""), row.get("description", ""))
+            name = _rank.term_name_match(term, table, field)
+            if not sub and not name:
+                continue
+            score = (
+                sub
+                + 60.0 * name
+                + 150.0 * _rank.exact_name_match(term, table, field)
+                - 60.0 * _rank.locale_penalty(term, field)
+                - 30.0 * _rank.column_prior_penalty(term, field)
+            )
+            matches.append((f"{table}.{field}", score))
+        return sorted(matches, key=lambda item: (-item[1], item[0].casefold()))
 
     def _lex_tables(self, query: str, k: int) -> list[tuple[str, float]]:
         matches = []

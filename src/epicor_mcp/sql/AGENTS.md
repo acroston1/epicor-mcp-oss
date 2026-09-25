@@ -51,8 +51,8 @@ is ungated and byte-identical to pre-gate behaviour. Everything else is private.
    `can_save`; that callback still checks the caller's BAQ-write right per request.
 
 ## Gotchas
-- `check_cost` runs on ad-hoc SQL only; saved BAQs skip it (parameters are not literals).
-- `sql_execute_timeout_s` (25 s), `sql_max_inflight` (2), `sql_session_budget_s` (120 s) bound every run.
+- `check_cost` is ad-hoc only (saved BAQs skip it); 25 s timeout, 2 in flight, 120 s budget bound every run.
+- Epicor runs `x in (select …)` as "subquery returned ANY row". Uncorrelated → CTE join; key-correlated kept; rest refused.
 - `validate_columns` returns `ok=False` only for a provably absent column; CTE outputs,
   unresolved aliases and uncatalogued tables report `skipped`, not failure.
 - ON conjuncts are filed under their LEFT table; under an earlier-joined table they fail

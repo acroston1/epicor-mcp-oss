@@ -16,6 +16,10 @@ __all__ = [
     "type_affinity",
     "thin_description",
     "fuse",
+    "split_terms",
+    "term_name_match",
+    "exact_name_match",
+    "locale_penalty",
     "NUMERIC_SQL_TYPES",
     "DATE_SQL_TYPES",
     "BOOL_SQL_TYPES",
@@ -138,6 +142,121 @@ def name_match_score(query: str, table: str, field: str, *, scoped: bool = True)
 
 
 # --------------------------------------------------------------------------- #
+# Multi-concept queries
+# --------------------------------------------------------------------------- #
+#: The ranker above scores ONE concept per query, but callers routinely send a
+#: comma list of 5-13 concepts in one ``query`` ("invoice number, legal number,
+#: customer, date, …"). Ranked as one string, every concept blurs into the
+#: others, and the name match is taken over the UNION of every term's tokens —
+#: so short canonical columns (``InvoiceNum``, ``Name``, ``TranDate``) fall out
+#: of the top ``limit``. Such a query is ranked PER TERM and merged round-robin
+#: (``DiscoveryIndex.search_fields_terms``). A query with no separator is ONE
+#: term and takes the original single-query path byte-for-byte.
+_TERM_SPLIT = re.compile(r"[,;\n]+")
+_TERM_LEAD = re.compile(r"^(?:and|or|the|plus|also)\s+", re.I)
+MAX_TERMS = 20
+
+
+def split_terms(query: str) -> list[str]:
+    """``"PO line, part number; due date"`` -> ``["PO line", "part number", "due date"]``.
+
+    Commas, semicolons and newlines separate concepts. A slash does NOT — in
+    ``"site/plant"`` both words name ONE concept, and :func:`name_tokens` already
+    splits on it. Returns ``[query]`` unchanged (not stripped, not normalised)
+    when there is at most one term, so the single-term path sees the caller's
+    exact string.
+    """
+    parts = [_TERM_LEAD.sub("", p.strip()).strip() for p in _TERM_SPLIT.split(query or "")]
+    out: list[str] = []
+    seen: set[str] = set()
+    for p in parts:
+        if p and p.lower() not in seen:
+            seen.add(p.lower())
+            out.append(p)
+    if len(out) <= 1:
+        return [query]
+    return out[:MAX_TERMS]
+
+
+_IDENTITY_TOKENS = frozenset({"name", "identifier"})
+
+
+def term_name_match(term: str, table: str, field: str) -> float:
+    """Per-term name match: the better of the WHOLE term and the term with the
+    table's own words removed.
+
+    :func:`name_match_score` always strips the table's words, which is right for
+    "vendor name" on ``Vendor`` (-> ``Name``) and wrong for "invoice number" on
+    ``InvcHead``: stripping "invoice" leaves ``{number}``, which scores
+    ``InvoiceNum`` and ``LegalNumber`` identically. Taking the max keeps both.
+    """
+    q = canon_set(name_tokens(term))
+    if not q:
+        return 0.0
+    ftok = canon_set(split_camel(field))
+    ttok = canon_set(split_camel(table))
+    stripped = q - ttok
+    if not stripped:
+        # The term only names the table ("vendor" on Vendor, "customer" on
+        # Customer): the caller wants the record's IDENTITY — its name / id
+        # columns (``Name``, ``VendorID``, ``CustID``), not every column that
+        # happens to carry the table's word (``VendorNum`` is the key, already
+        # in ``primary_key``).
+        rest = ftok - ttok
+        if rest and rest <= _IDENTITY_TOKENS:
+            return 1.0
+    if ftok - ttok and ftok <= q | ttok:
+        # Every word of the column's name was typed ("vendor id name" ->
+        # ``Name`` and ``VendorID``; "invoice due date" -> ``DueDate``): one
+        # term often carries two concepts, and each column it fully names is
+        # an answer to it.
+        return 1.0
+    return max(_overlap(q, ftok), _overlap(stripped, ftok) if stripped else 0.0)
+
+
+def exact_name_match(term: str, table: str, field: str) -> bool:
+    """The term, canonicalised, IS the column name: "invoice number" ->
+    ``InvoiceNum``, "check date" -> ``CheckDate``, "vendor id" -> ``VendorID``,
+    "vendor name" on ``Vendor`` -> ``Name``."""
+    return term_name_match(term, table, field) >= 1.0
+
+
+#: Country / feature localisation families. Epicor ships each of these as a
+#: parallel column next to the base one (``CPayInvoiceBal`` beside
+#: ``InvoiceBal``, ``TWGUIRegNumBuyer`` beside ``BuyerID``) and they embed close
+#: to the plain English. Waived when the term asks for that flavour.
+LOCALE_PREFIXES: dict[str, tuple[str, ...]] = {
+    "CPay": ("central", "cpay"),
+    "CCol": ("child", "parent", "ccol", "consolidat"),
+    "Glb": ("global", "glb"),
+    "TW": ("taiwan", "gui"),
+    "JP": ("japan",),
+    "PE": ("peru",),
+    "TH": ("thai",),
+    "MX": ("mexic", "cfdi", "sat "),
+    "EInv": ("electronic", "einv", "e-invoic"),
+    "OTS": ("one time", "one-time", "ots"),
+    "AG": ("argentin",),
+    "DE": ("german",),
+    "PL": ("poland", "polish"),
+    "CN": ("china", "chinese", "golden tax"),
+    "Carbon": ("carbon", "co2", "emission"),
+}
+_LOCALE_RE = re.compile(
+    r"^(" + "|".join(sorted(LOCALE_PREFIXES, key=len, reverse=True)) + r")(?=[A-Z0-9])"
+)
+
+
+def locale_penalty(term: str, field: str) -> float:
+    """1.0 for a localisation-family column the term did not ask for, else 0.0."""
+    m = _LOCALE_RE.match(field)
+    if not m:
+        return 0.0
+    tl = term.lower()
+    return 0.0 if any(w in tl for w in LOCALE_PREFIXES[m.group(1)]) else 1.0
+
+
+# --------------------------------------------------------------------------- #
 # Type affinity  (SQL types — see the module docstring)
 # --------------------------------------------------------------------------- #
 NUMERIC_SQL_TYPES = frozenset({
@@ -238,6 +357,9 @@ def fuse(
     w_prior: float = 0.10,
     w_type: float = 0.02,
     topn: int = 50,
+    per_term: bool = False,
+    w_exact: float = 0.08,
+    w_locale: float = 0.08,
 ) -> list[tuple[str, float]]:
     """Score-level fusion. *meta* maps key -> ``(table, field, sql_type)``.
 
@@ -245,6 +367,12 @@ def fuse(
     not comparable to cosines, and the whole point of ``w_lex = 0.01`` is that
     the lexical leg can rescue a column the dense leg missed entirely without
     ever outvoting it.
+
+    ``per_term=True`` is the multi-concept path (:func:`split_terms`): *query*
+    is ONE term, the name match is :func:`term_name_match`, and two terms join —
+    an exact-name bonus and the localisation-family penalty. ``False`` (the
+    default) is the original formula exactly, so a single-term query is
+    unaffected.
     """
     scores: dict[str, float] = dict(dense)
     lex_credit = {k: 10.0 / (10 + i) for i, (k, _) in enumerate(lex)}
@@ -257,10 +385,18 @@ def fuse(
         if m is None:
             continue
         table, field, sql_type = m
+        if per_term:
+            extra = (
+                w_name * term_name_match(query, table, field)
+                + w_exact * exact_name_match(query, table, field)
+                - w_locale * locale_penalty(query, field)
+            )
+        else:
+            extra = w_name * name_match_score(query, table, field, scoped=scoped)
         out.append((
             k,
             s
-            + w_name * name_match_score(query, table, field, scoped=scoped)
+            + extra
             + w_lex * lex_credit.get(k, 0.0)
             + w_type * type_affinity(query, sql_type)
             - w_prior * column_prior_penalty(query, field),

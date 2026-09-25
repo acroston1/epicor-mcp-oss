@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
+from epicor_mcp.discovery import rank as _rank
 from epicor_mcp.sql.envelope import error_envelope
 from epicor_mcp.sql.scope_gate import AUTHZ_UNAVAILABLE_GUIDANCE
 
@@ -64,8 +66,10 @@ FIELDS_DESCRIPTION = """\
 List administrator-imported columns of a table — the job, part, order, invoice or labor fields you can \
 validate before SELECT; Swagger-only metadata may include BO projection fields. `table` is REQUIRED and may be a LIST: pass every table your query will join and \
 get all of them in one call. An unscoped column search is meaningless — OnHandQty exists on 30+ \
-tables. Returns the column name, SQL type, Epicor's UI label and data-dictionary description, the \
-table's primary key, and — when the column you asked for lives on a DIFFERENT table — which one. \
+tables. `query` may list several things comma-separated ("invoice number, due date, balance") — \
+each is matched on its own. Returns the column name, SQL type, Epicor's UI label and a short \
+description, the table's primary key, and — when the column you asked for lives on a DIFFERENT \
+table — which one. \
 The OData names you may remember (Part.OnHandQty, JobOper.ScrapQty, OrderDtl.ExtPrice) are NOT \
 selectable; this tool returns only columns that exist in SQL."""
 
@@ -440,28 +444,38 @@ def register_discovery_tools(
                 # the allowed blocks are built.
                 names = served
 
-        vec = await embed_query(query, FIELD_QUERY_PREFIX) if query.strip() else None
+        # A comma/semicolon list is several concepts, ranked one at a time and
+        # merged round-robin (rank.split_terms, store.search_fields_terms) — with
+        # or without vectors. One term keeps the original single-query path byte
+        # for byte. The limit is raised to one slot per term so no concept the
+        # caller named is cut off.
+        terms = _rank.split_terms(query) if query.strip() else [query]
+        by_terms = getattr(index, "search_fields_terms", None)
+        if len(terms) > 1 and by_terms is not None:
+            limit = min(max(limit, len(terms)), 100)
+            vecs = await asyncio.gather(
+                *(embed_query(t, FIELD_QUERY_PREFIX) for t in terms)
+            )
+            term_vecs = list(zip(terms, vecs))
+            vec = next((v for v in vecs if v is not None), None)
+        else:
+            terms = [query]
+            term_vecs = None
+            vec = await embed_query(query, FIELD_QUERY_PREFIX) if query.strip() else None
         blocks = []
         for name in names:
             canon = index.resolve_table(name)
             info = index.table_info(canon) or {}
-            hits = index.search_fields(canon, vec, query, limit=limit + 25)
+            if term_vecs is not None:
+                hits = by_terms(canon, term_vecs, limit=limit + 25)
+            else:
+                hits = index.search_fields(canon, vec, query, limit=limit + 25)
             shown, hidden = [], 0
-            pk = set(_pk(canon))
             for h in hits:
                 if not _visible(canon, h.field):
                     hidden += 1
                     continue
-                shown.append(
-                    {
-                        "name": h.field,
-                        "type": h.sql_type,
-                        "label": h.label,
-                        "description": h.description,
-                        "primary_key": h.field in pk,
-                        "required": h.required,
-                    }
-                )
+                shown.append(_field_entry(h))
                 if len(shown) >= limit:
                     break
             total = info.get("field_count", len(index.fields_of(canon)))
@@ -528,9 +542,15 @@ def register_discovery_tools(
                 owners = [t for t in entry["lives_on"] if _suggestable(t)]
                 if owners:
                     elsewhere.append({**entry, "lives_on": owners})
+            # Only for the terms NOTHING served here matches by name. Run over the
+            # whole query it was mostly noise beside columns that already
+            # answered the question.
+            unmatched = [t for t in terms if not _served_by_name(t, blocks)]
             named = [
-                (t, c) for t, c in index.name_matches_elsewhere(
-                    query, [b["name"] for b in blocks]
+                (t, c) for t, c in (
+                    index.name_matches_elsewhere(
+                        " ".join(unmatched), [b["name"] for b in blocks]
+                    ) if unmatched else []
                 )
                 if _suggestable(t) and _visible(t, c)
             ]
@@ -587,6 +607,33 @@ def register_discovery_tools(
 
 
 # --------------------------------------------------------------------------- #
+#: A description longer than this is cut. Enough to tell ``RelQty`` ("in
+#: vendors unit of measure") from ``XRelQty`` ("in our unit of measure"); the
+#: full data-dictionary prose cost ~350 chars a column.
+_DESC_MAX = 100
+
+
+def _field_entry(h: Any) -> dict[str, Any]:
+    """One column, compact. No per-field ``primary_key``/``required``: the
+    table-level ``primary_key`` list already says the first, and the second is a
+    write-side fact on a read-only surface."""
+    entry: dict[str, Any] = {"name": h.field, "type": h.sql_type, "label": h.label}
+    desc = (h.description or "").strip()
+    label = (h.label or "").strip().lower()
+    if desc and not _rank.thin_description(h.field, desc) and desc.lower().rstrip(".") != label:
+        entry["description"] = desc if len(desc) <= _DESC_MAX else desc[: _DESC_MAX - 1].rstrip() + "…"
+    return entry
+
+
+def _served_by_name(term: str, blocks: list[dict]) -> bool:
+    """True when a column already served shares most of *term*'s name."""
+    for b in blocks:
+        for f in b["fields"]:
+            if _rank.term_name_match(term, b["name"], f["name"]) >= 0.5:
+                return True
+    return False
+
+
 def _authz_unavailable(scope: Any, *, retry_with: dict[str, Any]) -> dict[str, Any]:
     """The gate-mode fail-CLOSED envelope for an UNAVAILABLE scope.
 

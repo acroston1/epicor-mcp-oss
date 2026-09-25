@@ -24,6 +24,7 @@ __all__ = [
     "DomainCache",
     "ProbeResult",
     "diagnose_empty",
+    "unverified_text_match",
 ]
 
 DIALECT = "tsql"
@@ -811,6 +812,7 @@ async def _domain_for(
         "predicate": conj.text,
         "column": f"{conj.table}.{conj.column}",
         "compared_to": conj.literal if conj.kind != "null" else None,
+        "comparison": conj.kind,
         "matched_rows": 0,
         "likely_mistake": False,
     }
@@ -1349,6 +1351,37 @@ def _no_predicate_message(has_joins: bool, has_having: bool) -> str:
     )
 
 
+def unverified_text_match(finding: Mapping[str, Any]) -> bool:
+    """True when a dead predicate is an exact TEXT match that nothing proved absent.
+
+    ``=`` / ``in`` against a non-numeric literal, where the column's values were
+    NOT fully enumerated (a sample of the top 25, or no enumeration at all on a
+    big table). That is the one dead-predicate shape where "no row has this
+    value" and "the user's words are spelled differently in the data" look
+    identical to every probe this module runs — `Vendor.Name = 'Acme'` against
+    `ACME TOOLING INC`. A complete enumeration or a measured numeric range
+    DOES prove absence, and is not this.
+    """
+    if finding.get("likely_mistake") or finding.get("comparison") not in ("eq", "in"):
+        return False
+    if finding.get("sibling_hint"):
+        # The diagnosis already names WHERE the value most likely lives (the
+        # AP<->AR look-alike tables); a LIKE on the wrong table is not the lead.
+        return False
+    value = finding.get("compared_to")
+    if isinstance(value, (list, tuple)) and value:
+        value = value[0]
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        float(value)
+        return False
+    except ValueError:
+        pass
+    domain = finding.get("domain")
+    return not (isinstance(domain, Mapping) and domain.get("complete") is True)
+
+
 def _killing_verdict(
     findings: list[dict[str, Any]],
     alive: list[Conjunct],
@@ -1396,10 +1429,20 @@ def _killing_verdict(
             "spent first: " + "; ".join(c.text for c in untested[:4])
         )
     if not likely:
-        parts.append(
-            "This may still be the correct answer: a value that does not exist is a real "
-            "result, not necessarily a mistake."
-        )
+        inexact = [f for f in findings if unverified_text_match(f)]
+        if inexact:
+            parts.append(
+                "Only an EXACT match was tested and the column's values were not fully "
+                "listed, so this cannot tell a record that does not exist from one "
+                "spelled differently (a longer legal name, a suffix like INC, a partial "
+                f"id). A like '%…%' on {inexact[0]['predicate'].split('=')[0].strip()} "
+                "would settle it."
+            )
+        else:
+            parts.append(
+                "This may still be the correct answer: a value that does not exist is a "
+                "real result, not necessarily a mistake."
+            )
     return {
         "verdict": "killing_predicate",
         "likely_mistake": likely,
