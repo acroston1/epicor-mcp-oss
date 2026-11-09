@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     auth_mode: Literal["none", "azure_ad"] = "none"
     server_token: str = Field(default="", repr=False)
     table_whitelist_path: str = "table_whitelist.txt"
+    table_read_allowlist_path: str = "table_read_allowlist.txt"
     # Raw input avoids settings-source JSON decoding: blank is allowed, and
     # the validator parses exactly once and always stores a dict[str, str].
     plants: Any = Field(default_factory=dict)

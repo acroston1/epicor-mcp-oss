@@ -8,6 +8,7 @@ Microsoft SSO in docs/microsoft-sso.md; the desktop connector in bridge/README.m
 ## Run and test
 - Install: `python -m pip install -e '.[dev]'` (Python 3.11+). Configure via `.env`
   (`.env.example`) and `table_whitelist.txt` (`table_whitelist.example.txt`).
+- SSO shared reads: `table_read_allowlist.txt`; [maintenance](docs/shared-table-reads.md).
 - Serve: `epicor-mcp` (HTTP, 127.0.0.1:8015, endpoint `/mcp`, `/health`) or
   `epicor-mcp --stdio` (local, `auth_mode=none` only).
 - Gate: `.claude/e2e-gate.sh` runs `pytest tests -q`. Offline, deterministic, never
@@ -39,6 +40,8 @@ Microsoft SSO in docs/microsoft-sso.md; the desktop connector in bridge/README.m
   subqueries, saved-BAQ definitions, diagnostic probes. Empty whitelist = no tables; a
   missing or malformed configured file fails startup; only a blank setting opts out.
 - The built-in denylist in `src/epicor_mcp/sql/denylist.py` beats every grant, including SecurityMgr.
+- SSO shared reads add exact grants only after successful menu resolution; they never
+  widen the no-SSO whitelist or imply another schema/UD mirror. Restart after edits.
 - Nothing installation-specific is bundled: no schema corpus, vectors, documents, site
   maps, hosts or credentials. Operators supply them via `.env`, `data/`, and the whitelist.
 - Credentials come from `.env` or `EPICOR_MCP_CREDENTIALS_PATH`; never a `$HOME` file.

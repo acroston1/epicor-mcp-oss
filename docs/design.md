@@ -71,7 +71,9 @@ applies exact, case-insensitive `Schema.Table` grants. A missing or malformed
 configured file fails startup. An empty file grants no tables; only an explicitly
 blank path disables this whitelist. The built-in denylist still applies.
 
-In SSO mode, menu-derived scope applies to ad-hoc SQL and discovery. Identity,
+In SSO mode, menu-derived scope plus [exact shared reads](shared-table-reads.md)
+applies to ad-hoc SQL and discovery. Shared policy is loaded once per authorizer
+and cannot grant another schema or an implicit `_UD` mirror. Identity,
 menu and table-mapping failures deny affected access. Saved BAQ reads and
 dashboard resolution deliberately follow Epicor's existing grant model rather
 than this separate menu-derived scope. Saved definitions still pass the hard

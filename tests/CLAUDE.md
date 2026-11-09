@@ -6,6 +6,7 @@ Purpose: verify runtime, authorization, retrieval, and documentation without a l
 - [The gate](../.claude/e2e-gate.sh) runs documentation checks and pytest after installing `.[dev]`.
 - `python -m pytest tests -q` runs tests directly; target a file to diagnose failures.
 - `conftest.py`: environment and network isolation.
+- The gate uses `PYTHON` when set, otherwise `.venv/bin/python` when present, then `python3`.
 - `fixtures/`: synthetic catalogues, parser datasets, and adapters; see [policy](fixtures/README.md).
 - `harness/sql_lint.py`: independent SQL scoring helper.
 - `test_oss_*.py`: portable setup, read-only policy, documents, HTTP, and bridge.

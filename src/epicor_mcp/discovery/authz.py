@@ -1,4 +1,4 @@
-'Table-level authorization — a GATE, default deny: scoped users reach only menu-mapped tables.'
+'Table authorization from successful menu scopes and configured exact shared reads.'
 
 from __future__ import annotations
 
@@ -6,7 +6,10 @@ import asyncio
 import enum
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
+from epicor_mcp.rbac.table_whitelist import normalize_table as _qualified_table
 
 
 logger = logging.getLogger(__name__)
@@ -61,6 +64,10 @@ class AuthzScope:
     reason: str
     security_mgr: bool = False
     service_count: int = 0
+    shared_read_tables: frozenset[str] = frozenset()
+    # Candidate names in tables include shared reads for discovery prefiltering.
+    # Keep their origin separate so they cannot inherit legacy menu/UD behavior.
+    _menu_tables: frozenset[str] | None = None
 
     def __post_init__(self) -> None:
         if (self.state is ScopeState.SCOPED) != (self.tables is not None):
@@ -77,14 +84,19 @@ class AuthzScope:
 
     @classmethod
     def scoped(
-        cls, email: str, tables: Any, reason: str, *, service_count: int = 0
+        cls, email: str, tables: Any, reason: str, *, service_count: int = 0,
+        shared_read_tables: Any = (),
     ) -> "AuthzScope":
+        menu_tables = frozenset(normalize_table(t) for t in tables)
+        shared = frozenset(_qualified_table(t) for t in shared_read_tables)
         return cls(
             email,
             ScopeState.SCOPED,
-            frozenset(normalize_table(t) for t in tables),
+            menu_tables | frozenset(normalize_table(t) for t in shared),
             reason,
             service_count=service_count,
+            shared_read_tables=shared,
+            _menu_tables=menu_tables,
         )
 
     @classmethod
@@ -116,7 +128,8 @@ class AuthzScope:
         if self.state is ScopeState.UNAVAILABLE:
             return False
         norm = normalize_table(name)
-        if norm in self.tables:  # type: ignore[operator]
+        menu_tables = self._menu_tables if self._menu_tables is not None else self.tables
+        if norm in menu_tables:  # type: ignore[operator]
             return True
         if norm.endswith("_ud"):
             # Strip ONLY when the remainder is non-empty: a name that IS the
@@ -125,8 +138,15 @@ class AuthzScope:
             # malformed scope entry and fail open).
             parent = norm[: -len("_ud")]
             if parent:
-                return parent in self.tables  # type: ignore[operator]
-        return False
+                if parent in menu_tables:  # type: ignore[operator]
+                    return True
+        # Shared grants are exact and schema-sensitive, including explicit _UD
+        # entries. A bare request means Erp, matching the no-SSO policy.
+        query_name = ".".join(p.strip("[]") for p in str(name or "").strip().split("."))
+        try:
+            return _qualified_table(query_name) in self.shared_read_tables
+        except ValueError:
+            return False
 
     def note(self, mode: str = "") -> str:
         """Human-readable line for the ``authz`` response block. *mode* tailors
@@ -140,15 +160,18 @@ class AuthzScope:
             "gate": "are the only tables this surface serves",
             "boost": "are ranked higher — nothing is hidden",
         }.get(mode, "define this caller's table scope")
+        source = "Epicor menus"
+        if self.shared_read_tables:
+            source += " and the exact shared read allowlist"
         return (
-            f"Tables {self.email} can reach through the Epicor menu "
+            f"Tables {self.email} can reach through {source} "
             f"{verb} ({len(self.tables or ())} tables via "
             f"{self.service_count} business objects)."
         )
 
 
 class TableAuthorizer:
-    """email -> :class:`AuthzScope`, via the menu chain + the baseline.
+    """Email -> menu table scope plus an operator-controlled shared-read policy.
 
     Failure paths return UNAVAILABLE — never an empty set (which would read as
     "the chain worked and found nothing") and never ``None`` tables under a
@@ -164,8 +187,12 @@ class TableAuthorizer:
         mode: str = "gate",
         dev_identity: str = "",
         snapshot_wait_s: float = 15.0,
+        table_read_allowlist_path: str | Path | None = None,
     ) -> None:
+        from epicor_mcp.discovery.shared_reads import read_allowlist
+
         self._authorizer = menu_authorizer
+        self._shared_read_tables = read_allowlist(table_read_allowlist_path)
         self._index = service_index
         # An unrecognised mode value falls back to GATE, not boost: a typo'd
         # env var must not silently un-gate the surface.
@@ -287,7 +314,9 @@ class TableAuthorizer:
             return AuthzScope.scoped(
                 email,
                 frozenset(),
-                "menu chain resolved zero services — no tables",
+                ("shared read allowlist (zero menu services)" if self._shared_read_tables
+                 else "menu chain resolved zero services — no tables"),
+                shared_read_tables=self._shared_read_tables,
             )
 
         tables: set[str] = set()
@@ -314,6 +343,7 @@ class TableAuthorizer:
         return AuthzScope.scoped(
             email,
             frozenset(tables),
-            "menu chain",
+            "menu chain + shared read allowlist" if self._shared_read_tables else "menu chain",
             service_count=len(services),
+            shared_read_tables=self._shared_read_tables,
         )

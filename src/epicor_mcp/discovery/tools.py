@@ -580,8 +580,8 @@ def register_discovery_tools(
                 "tables": unauthorized,
                 "terminal": True,
                 "message": (
-                    f"{', '.join(unauthorized)}: outside the tables your Epicor "
-                    "menu access reaches. Not described here, and epicor_query "
+                    f"{', '.join(unauthorized)}: outside your configured table "
+                    "authorization. Not described here, and epicor_query "
                     "will refuse SQL against them — do not retry them. The "
                     "served tables above are complete."
                 ),
@@ -679,11 +679,11 @@ def _not_authorized_envelope(
     them = "them" if plural else "it"
     return error_envelope(
         "table_not_authorized",
-        f"{', '.join(blocked)}: outside the set of tables your Epicor menu "
-        f"access reaches. This surface will not describe {them}, and "
+        f"{', '.join(blocked)}: outside your configured table "
+        f"authorization. This surface will not describe {them}, and "
         f"epicor_query will refuse SQL against {them}. The refusal is final "
         f"for {'these tables' if plural else 'this table'} — pivot to a table "
-        "you can reach, or ask an Epicor admin for the menu access.",
+        "you can reach, or ask the administrator to review your table grants.",
         valid={"reachable_tables": alternatives} if alternatives else None,
         retry_with=(
             {"table": alternatives[0], "query": query} if alternatives else None

@@ -6,6 +6,7 @@ Purpose: serve the five-tool Epicor read surface with portable configuration.
 - `server.py`: `create_app`, `main`; HTTP/stdio and optional OAuth/admin routes.
 - `config.py`: `Settings`, `validate_runtime`; environment/.env configuration.
 - `Settings.plants`: validated `dict[str, str]` from `EPICOR_MCP_PLANTS`.
+- `Settings.table_read_allowlist_path`: SSO-only shared reads; no-SSO ceiling unchanged.
 - `wedge_server.py`: `WedgeRuntime`; query dispatch and session attribution.
 - `context.py`, `audit.py`: request identity and the local audit log (both modes).
 - [auth](auth/AGENTS.md): credentials, token validation, sessions.

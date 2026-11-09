@@ -1,0 +1,17 @@
+# Shared reads for admitted, enabled Microsoft SSO users, independent of menus.
+# Exact names only. Bare names mean Erp; no wildcard or implicit _UD grants.
+# This file never broadens the strict no-SSO table_whitelist.txt policy.
+# Edit deliberately, validate, and restart. See docs/shared-table-reads.md.
+Erp.PartDtl
+Erp.PartMtl
+Erp.SugPOChg
+Erp.PegDmdMst
+Erp.PegSupMst
+Erp.PegLink
+Erp.PartOpr
+Erp.PartOpDtl
+Erp.ARBalance
+Erp.InspPlan
+Erp.InspResults
+Erp.PartBOM  # Temporary definition; a grant does not create stored rows.
+Erp.PartOprInsp

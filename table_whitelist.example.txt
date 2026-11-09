@@ -1,5 +1,19 @@
 # Example: copy selected entries into table_whitelist.txt.
 Erp.Part
 Erp.JobHead
+# Optional operational tables. Copy only those your users should be able to read.
+Erp.PartDtl
+Erp.PartMtl
+Erp.SugPOChg
+Erp.PegDmdMst
+Erp.PegSupMst
+Erp.PegLink
+Erp.PartOpr
+Erp.PartOpDtl
+Erp.ARBalance
+Erp.InspPlan
+Erp.InspResults
+Erp.PartBOM  # Temporary definition; access does not imply stored data.
+Erp.PartOprInsp
 # This is a separate grant; Part never implicitly grants Part_UD:
 # Erp.Part_UD

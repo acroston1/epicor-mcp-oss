@@ -5,6 +5,7 @@ Purpose: explain the project to operators who have only this repository.
 ## Entry points
 - [design.md](design.md): architecture, authorization, retrieval, and rationale.
 - [microsoft-sso.md](microsoft-sso.md): optional identity and configuration setup.
+- [shared-table-reads.md](shared-table-reads.md): shared SSO policy vs no-SSO ceiling.
 - [verification.md](verification.md): verification evidence and untested integrations.
 - [Root README](../README.md): installation, imports, hosting, and troubleshooting.
 - [Bridge README](../bridge/README.md): executable builds and client configuration.

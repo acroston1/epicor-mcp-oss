@@ -131,6 +131,14 @@ file stops startup. Restart after editing either list. To **explicitly opt out**
 of the whitelist, set `EPICOR_MCP_TABLE_WHITELIST_PATH=`; the remaining limits
 are the built-in denylist and your Epicor credentials' permissions.
 
+Optional Microsoft SSO has a separate shared-read policy in
+[`table_read_allowlist.txt`](table_read_allowlist.txt), controlled by
+`EPICOR_MCP_TABLE_READ_ALLOWLIST_PATH`. It adds exact reads to successfully
+resolved users' menu grants; it does **not** broaden this no-SSO whitelist.
+The tracked file includes thirteen operational/inspection/receivables tables.
+See [shared table reads](docs/shared-table-reads.md) to edit, validate, remove
+and activate grants. No Python edits are needed for policy changes.
+
 For a hosted endpoint without Microsoft SSO, also set:
 
 ```dotenv

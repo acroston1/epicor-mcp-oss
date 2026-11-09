@@ -16,6 +16,14 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def isolated_shared_read_policy(tmp_path, monkeypatch):
+    """Operator edits must not alter unrelated tests' synthetic permissions."""
+    path = tmp_path / 'shared-policy.txt'
+    path.write_text('# no shared grants for legacy test fixtures\n', encoding='utf-8')
+    monkeypatch.setenv('EPICOR_MCP_TABLE_READ_ALLOWLIST_PATH', str(path))
+
+
+@pytest.fixture(autouse=True)
 def synthetic_schema_for_engine_regressions(request, tmp_path, monkeypatch):
     """Supply metadata explicitly to tests that formerly relied on private data."""
     modules = {'test_validate_columns','test_pipe_integration','test_lint_unknown_table',

@@ -6,6 +6,9 @@ Public interfaces: `DiscoveryIndex.load/empty`, table resolution/search methods,
 `register_discovery_tools`, `TableAuthorizer` (Microsoft menu scope), and
 `embeddings.embedder_for_index(settings, manifest)` with its two providers,
 `LocalEmbedder` (sentence-transformers) and `EndpointEmbedder` (OpenAI-style).
+`shared_reads.read_allowlist` and its `--check` CLI validate exact shared SSO policy.
+`TableAuthorizer(..., table_read_allowlist_path=...)` loads once per instance;
+`AuthzScope.shared_read_tables` retains schema-qualified shared provenance.
 
 Invariants:
 - Register both tools even before metadata import; return actionable empty data.
@@ -32,3 +35,5 @@ Invariants:
 - Qualified table requests must match the imported schema; never resolve an
   `Ice.X` request to `Erp.X`. Duplicate unqualified names are refused at import.
 - Imported Swagger projections must never be presented as verified SQL fields.
+- Shared-only grants are schema-exact, add no implicit UD mirrors, and never mask
+  failed identity/menu/index resolution. No-SSO whitelist behavior is separate.

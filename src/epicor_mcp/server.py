@@ -335,6 +335,7 @@ def _create_mcp_server(
             service_index,
             mode=getattr(settings, "table_authz_mode", "gate"),
             dev_identity=getattr(settings, "dev_identity", ""),
+            table_read_allowlist_path=getattr(settings, "table_read_allowlist_path", "table_read_allowlist.txt"),
         )
     except Exception:  # noqa: BLE001 - an unimportable discovery package must
         # not take the server down; but the missing gate must not be silent
